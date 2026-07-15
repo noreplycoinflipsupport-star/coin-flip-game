@@ -326,6 +326,19 @@ exports.debug = async (req, res) => {
         });
       })));
     } catch (e) { shardDns = 'Exception: ' + e.message; }
+    let tcpTest = null;
+    try {
+      const net = require('net');
+      const ips = ['159.41.243.9', '159.41.243.26', '159.41.243.45'];
+      tcpTest = await Promise.all(ips.map(ip => new Promise((resolve) => {
+        const sock = new net.Socket();
+        sock.setTimeout(8000);
+        sock.on('connect', () => { sock.destroy(); resolve(ip + ':27017 -> OPEN'); });
+        sock.on('error', (e) => { sock.destroy(); resolve(ip + ':27017 -> ' + e.message); });
+        sock.on('timeout', () => { sock.destroy(); resolve(ip + ':27017 -> TIMEOUT'); });
+        sock.connect(27017, ip);
+      })));
+    } catch (e) { tcpTest = 'Exception: ' + e.message; }
     res.json({
       mongooseState: states[state] || state,
       lastMongoError: getLastMongoError(),
@@ -335,7 +348,8 @@ exports.debug = async (req, res) => {
       nodeVersion: process.version,
       dnsSrv: dnsResult,
       dnsA: altDns,
-      shardDns: shardDns
+      shardDns: shardDns,
+      tcpTest: tcpTest
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
