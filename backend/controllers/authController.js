@@ -316,6 +316,16 @@ exports.debug = async (req, res) => {
         });
       });
     } catch (e) { altDns = 'Exception: ' + e.message; }
+    let shardDns = null;
+    try {
+      const shards = ['ac-o5tzf5w-shard-00-00.mfxt7kz.mongodb.net', 'ac-o5tzf5w-shard-00-01.mfxt7kz.mongodb.net', 'ac-o5tzf5w-shard-00-02.mfxt7kz.mongodb.net'];
+      shardDns = await Promise.all(shards.map(h => new Promise((resolve) => {
+        dns.resolve4(h, (err, addresses) => {
+          if (err) resolve(h + ': FAILED (' + err.message + ')');
+          else resolve(h + ': ' + addresses.join(', '));
+        });
+      })));
+    } catch (e) { shardDns = 'Exception: ' + e.message; }
     res.json({
       mongooseState: states[state] || state,
       lastMongoError: getLastMongoError(),
@@ -324,7 +334,8 @@ exports.debug = async (req, res) => {
       mongooseVersion: mongoose.version,
       nodeVersion: process.version,
       dnsSrv: dnsResult,
-      dnsA: altDns
+      dnsA: altDns,
+      shardDns: shardDns
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
