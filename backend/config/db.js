@@ -6,13 +6,12 @@ const connectDB = async () => {
     const uri = process.env.MONGODB_URI;
     if (!uri) {
       logger.error('MONGODB_URI is not set in environment variables');
-      process.exit(1);
+      return;
     }
     const conn = await mongoose.connect(uri);
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     logger.error(`MongoDB connection error: ${error.message}`);
-    process.exit(1);
   }
 };
 
