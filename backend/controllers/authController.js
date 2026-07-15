@@ -329,15 +329,37 @@ exports.debug = async (req, res) => {
     let tcpTest = null;
     try {
       const net = require('net');
+      const tlsMod = require('tls');
       const ips = ['159.41.243.9', '159.41.243.26', '159.41.243.45'];
       tcpTest = await Promise.all(ips.map(ip => new Promise((resolve) => {
         const sock = new net.Socket();
         sock.setTimeout(8000);
-        sock.on('connect', () => { sock.destroy(); resolve(ip + ':27017 -> OPEN'); });
-        sock.on('error', (e) => { sock.destroy(); resolve(ip + ':27017 -> ' + e.message); });
-        sock.on('timeout', () => { sock.destroy(); resolve(ip + ':27017 -> TIMEOUT'); });
+        sock.on('connect', () => {
+          sock.destroy();
+          resolve(ip + ':27017 -> TCP OPEN');
+        });
+        sock.on('error', (e) => { sock.destroy(); resolve(ip + ':27017 -> TCP ' + e.message); });
+        sock.on('timeout', () => { sock.destroy(); resolve(ip + ':27017 -> TCP TIMEOUT'); });
         sock.connect(27017, ip);
       })));
+      const tlsHost = 'ac-o5tzf5w-shard-00-00.mfxt7kz.mongodb.net';
+      tcpTest.push('TLS test to ' + tlsHost + ':27017');
+      const tlsResult = await new Promise((resolve) => {
+        const socket = tlsMod.connect({
+          host: tlsHost,
+          port: 27017,
+          servername: tlsHost,
+          rejectUnauthorized: false,
+          timeout: 10000
+        }, () => {
+          resolve('TLS handshake OK, cipher: ' + socket.getCipher().name);
+          socket.end();
+        });
+        socket.on('error', (e) => { resolve('TLS error: ' + e.message); });
+        socket.on('timeout', () => { resolve('TLS timeout'); socket.destroy(); });
+        setTimeout(() => { if (!socket.destroyed) { socket.destroy(); resolve('TLS timeout (10s)'); } }, 10000);
+      });
+      tcpTest.push(tlsResult);
     } catch (e) { tcpTest = 'Exception: ' + e.message; }
     res.json({
       mongooseState: states[state] || state,
@@ -349,7 +371,8 @@ exports.debug = async (req, res) => {
       dnsSrv: dnsResult,
       dnsA: altDns,
       shardDns: shardDns,
-      tcpTest: tcpTest
+      tcpTest: tcpTest,
+      opensslVersion: process.versions.openssl
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
