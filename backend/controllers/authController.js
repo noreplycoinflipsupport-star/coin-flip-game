@@ -297,13 +297,34 @@ exports.debug = async (req, res) => {
     const state = mongoose.connection.readyState;
     const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
     const { getLastMongoError } = require('../config/db');
+    const dns = require('dns');
+    let dnsResult = null;
+    try {
+      dnsResult = await new Promise((resolve, reject) => {
+        dns.resolveSrv('_mongodb._tcp.cluster0.mfxt7kz.mongodb.net', (err, addresses) => {
+          if (err) resolve('SRV lookup failed: ' + err.message);
+          else resolve(addresses.map(a => a.name + ':' + a.port).join(', '));
+        });
+      });
+    } catch (e) { dnsResult = 'Exception: ' + e.message; }
+    let altDns = null;
+    try {
+      altDns = await new Promise((resolve, reject) => {
+        dns.resolve4('cluster0.mfxt7kz.mongodb.net', (err, addresses) => {
+          if (err) resolve('A lookup failed: ' + err.message);
+          else resolve(addresses.join(', '));
+        });
+      });
+    } catch (e) { altDns = 'Exception: ' + e.message; }
     res.json({
       mongooseState: states[state] || state,
       lastMongoError: getLastMongoError(),
       nodeEnv: process.env.NODE_ENV,
       mongoUri: (process.env.MONGODB_URI || '').replace(/\/\/.*:.*@/, '//USER:PASS@'),
       mongooseVersion: mongoose.version,
-      nodeVersion: process.version
+      nodeVersion: process.version,
+      dnsSrv: dnsResult,
+      dnsA: altDns
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
