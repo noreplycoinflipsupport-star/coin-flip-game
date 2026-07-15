@@ -360,6 +360,20 @@ exports.debug = async (req, res) => {
         setTimeout(() => { if (!socket.destroyed) { socket.destroy(); resolve('TLS timeout (10s)'); } }, 10000);
       });
       tcpTest.push(tlsResult);
+      const testHosts = ['google.com:443', 'api.github.com:443'];
+      for (const th of testHosts) {
+        const [h, p] = th.split(':');
+        const r = await new Promise((resolve) => {
+          const socket = tlsMod.connect({ host: h, port: parseInt(p), servername: h, rejectUnauthorized: false, timeout: 8000 }, () => {
+            resolve(h + ':' + p + ' -> TLS OK, cipher: ' + socket.getCipher().name);
+            socket.end();
+          });
+          socket.on('error', (e) => { resolve(h + ':' + p + ' -> ' + e.message); });
+          socket.on('timeout', () => { resolve(h + ':' + p + ' -> TIMEOUT'); socket.destroy(); });
+          setTimeout(() => { if (!socket.destroyed) { socket.destroy(); resolve(h + ':' + p + ' -> TIMEOUT'); } }, 8000);
+        });
+        tcpTest.push(r);
+      }
     } catch (e) { tcpTest = 'Exception: ' + e.message; }
     res.json({
       mongooseState: states[state] || state,
@@ -372,7 +386,10 @@ exports.debug = async (req, res) => {
       dnsA: altDns,
       shardDns: shardDns,
       tcpTest: tcpTest,
-      opensslVersion: process.versions.openssl
+      opensslVersion: process.versions.openssl,
+      renderIp: process.env.RENDER_EXTERNAL_HOSTNAME || null,
+      render: process.env.RENDER || null,
+      outboundIp: null
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
