@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings - Admin CoinFlip</title>
+  <link rel="manifest" href="/manifest.json" />
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="toast-container" id="toast-container"></div>
+
+<div class="admin-layout">
+  <aside class="sidebar">
+    <a href="/admin/" class="sidebar-logo">
+      <span class="logo-emoji">🪙</span>
+      <span class="logo-text">CoinFlip</span>
+      <span class="admin-badge">Admin</span>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Overview</div>
+      <a href="/admin/" class="sidebar-link"><span class="icon">📊</span> Dashboard</a>
+      <div class="sidebar-section-label">Management</div>
+      <a href="/admin/users.html" class="sidebar-link"><span class="icon">👥</span> Users</a>
+      <a href="/admin/transactions.html" class="sidebar-link"><span class="icon">💰</span> Transactions</a>
+      <a href="/admin/game-history.html" class="sidebar-link"><span class="icon">🎮</span> Game History</a>
+      <div class="sidebar-section-label">Configuration</div>
+      <a href="/admin/settings.html" class="sidebar-link active"><span class="icon">⚙️</span> Settings</a>
+      <a href="/admin/create-admin.html" class="sidebar-link"><span class="icon">👑</span> Create Admin</a>
+      <a href="/admin/live-control.html" class="sidebar-link"><span class="icon">🎯</span> Session Control</a>
+      <a href="/admin/free-control.html" class="sidebar-link"><span class="icon">🎮</span> Free Control</a>
+      <a href="/admin/wallet.html" class="sidebar-link"><span class="icon">🏦</span> Platform Wallet</a>
+      <div class="sidebar-section-label">Account</div>
+      <a href="/" class="sidebar-link"><span class="icon">🌐</span> View Site</a>
+      <a href="/admin/change-password.html" class="sidebar-link"><span class="icon">🔑</span> Change Password</a>
+      <a href="#" class="sidebar-link" onclick="localStorage.removeItem('cf_token');window.location.href='/login.html'"><span class="icon">🚪</span> Sign Out</a>
+    </nav>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <span class="admin-page-title">⚙️ Settings</span>
+      <button class="btn btn-outline btn-sm" onclick="toggleTheme()">🌙</button>
+    </header>
+
+    <div class="admin-content">
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+
+        <!-- Game Settings -->
+        <div class="data-table-card" style="padding:24px;">
+          <div class="data-table-title" style="margin-bottom:20px;">🎮 Game Settings</div>
+          <div class="form-group">
+            <label class="form-label">Commission % (House Edge)</label>
+            <input type="number" id="s-commission" class="form-input" min="0" max="50" step="0.5" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Minimum Bet Amount (₹)</label>
+            <input type="number" id="s-min-bet" class="form-input" min="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Maximum Bet Amount (₹)</label>
+            <input type="number" id="s-max-bet" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Session Duration (seconds)</label>
+            <input type="number" id="s-session-duration" class="form-input" min="10" max="600" />
+            <small style="color:var(--admin-text-hint);font-size:11px;">Time admin has to set result before auto-resolve</small>
+          </div>
+          <button class="btn btn-primary" onclick="saveGameSettings()">Save Game Settings</button>
+        </div>
+
+        <!-- Wallet Settings -->
+        <div class="data-table-card" style="padding:24px;">
+          <div class="data-table-title" style="margin-bottom:20px;">💰 Wallet Settings</div>
+          <div class="form-group">
+            <label class="form-label">Minimum Deposit (₹)</label>
+            <input type="number" id="s-min-deposit" class="form-input" min="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Minimum Withdrawal (₹)</label>
+            <input type="number" id="s-min-withdrawal" class="form-input" min="1" />
+          </div>
+          <button class="btn btn-primary" onclick="saveWalletSettings()">Save Wallet Settings</button>
+        </div>
+
+        <!-- Referral Settings -->
+        <div class="data-table-card" style="padding:24px;">
+          <div class="data-table-title" style="margin-bottom:20px;">🔗 Referral Settings</div>
+          <div class="form-group">
+            <label class="form-label">Referral Commission %</label>
+            <input type="number" id="s-ref-commission" class="form-input" min="0" max="20" step="0.5" />
+          </div>
+          <div class="form-group">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <label class="form-label">Referral Bonus Enabled</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="s-ref-enabled" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveReferralSettings()">Save Referral Settings</button>
+        </div>
+
+        <!-- Maintenance -->
+        <div class="data-table-card" style="padding:24px;">
+          <div class="data-table-title" style="margin-bottom:20px;">🔧 Maintenance</div>
+          <div class="form-group">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <label class="form-label">Maintenance Mode</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="s-maintenance" onchange="toggleMaintenance()" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Maintenance Message</label>
+            <input type="text" id="s-maintenance-msg" class="form-input" />
+          </div>
+          <button class="btn btn-warning" onclick="saveMaintenanceSettings()">Save Maintenance Settings</button>
+        </div>
+
+        <!-- Announcement -->
+        <div class="data-table-card" style="padding:24px; grid-column: 1 / -1;">
+          <div class="data-table-title" style="margin-bottom:20px;">📢 Announcement</div>
+          <div style="display:flex; gap:12px; align-items:flex-end;">
+            <div style="flex:1" class="form-group" style="margin:0">
+              <label class="form-label">Announcement Text</label>
+              <input type="text" id="s-announcement" class="form-input" placeholder="Your announcement message..." />
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Enabled</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="s-announcement-enabled" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:16px;" onclick="saveAnnouncement()">Save Announcement</button>
+        </div>
+
+        <!-- Currency Settings -->
+        <div class="data-table-card" style="padding:24px; grid-column: 1 / -1;">
+          <div class="data-table-title" style="margin-bottom:20px;">💱 Exchange Rates (relative to INR)</div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:16px;">
+            <div class="form-group">
+              <label class="form-label">USD (1 INR = ? USD)</label>
+              <input type="number" id="s-rate-usd" class="form-input" step="0.0001" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">EUR (1 INR = ? EUR)</label>
+              <input type="number" id="s-rate-eur" class="form-input" step="0.0001" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">GBP (1 INR = ? GBP)</label>
+              <input type="number" id="s-rate-gbp" class="form-input" step="0.0001" />
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveExchangeRates()">Save Exchange Rates</button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  async function loadSettings() {
+    const data = await apiCall('/admin/settings');
+    if (!data.success) return;
+    const s = data.settings;
+
+    document.getElementById('s-commission').value = s.commissionPercent;
+    document.getElementById('s-min-bet').value = s.minBet;
+    document.getElementById('s-max-bet').value = s.maxBet;
+    document.getElementById('s-session-duration').value = s.sessionDuration || 60;
+    document.getElementById('s-min-deposit').value = s.minDeposit;
+    document.getElementById('s-min-withdrawal').value = s.minWithdrawal;
+    document.getElementById('s-ref-commission').value = s.referralCommissionPercent;
+    document.getElementById('s-ref-enabled').checked = s.referralBonusEnabled;
+    document.getElementById('s-maintenance').checked = s.maintenanceMode;
+    document.getElementById('s-maintenance-msg').value = s.maintenanceMessage;
+    document.getElementById('s-announcement').value = s.announcement;
+    document.getElementById('s-announcement-enabled').checked = s.announcementEnabled;
+    if (s.exchangeRates) {
+      document.getElementById('s-rate-usd').value = s.exchangeRates.USD || 0.012;
+      document.getElementById('s-rate-eur').value = s.exchangeRates.EUR || 0.011;
+      document.getElementById('s-rate-gbp').value = s.exchangeRates.GBP || 0.0095;
+    }
+  }
+
+  async function saveSettings(body, label) {
+    const data = await apiCall('/admin/settings', 'PATCH', body);
+    if (data.success) showToast(`${label} saved!`, 'success');
+    else showToast(data.message, 'error');
+  }
+
+  const saveGameSettings = () => saveSettings({
+    commissionPercent: parseFloat(document.getElementById('s-commission').value),
+    minBet: parseFloat(document.getElementById('s-min-bet').value),
+    maxBet: parseFloat(document.getElementById('s-max-bet').value),
+    sessionDuration: parseInt(document.getElementById('s-session-duration').value) || 60
+  }, 'Game settings');
+
+  const saveWalletSettings = () => saveSettings({
+    minDeposit: parseFloat(document.getElementById('s-min-deposit').value),
+    minWithdrawal: parseFloat(document.getElementById('s-min-withdrawal').value)
+  }, 'Wallet settings');
+
+  const saveReferralSettings = () => saveSettings({
+    referralCommissionPercent: parseFloat(document.getElementById('s-ref-commission').value),
+    referralBonusEnabled: document.getElementById('s-ref-enabled').checked
+  }, 'Referral settings');
+
+  const saveMaintenanceSettings = () => saveSettings({
+    maintenanceMode: document.getElementById('s-maintenance').checked,
+    maintenanceMessage: document.getElementById('s-maintenance-msg').value
+  }, 'Maintenance settings');
+
+  const saveAnnouncement = () => saveSettings({
+    announcement: document.getElementById('s-announcement').value,
+    announcementEnabled: document.getElementById('s-announcement-enabled').checked
+  }, 'Announcement');
+
+  const saveExchangeRates = () => saveSettings({
+    exchangeRates: {
+      INR: 1,
+      USD: parseFloat(document.getElementById('s-rate-usd').value),
+      EUR: parseFloat(document.getElementById('s-rate-eur').value),
+      GBP: parseFloat(document.getElementById('s-rate-gbp').value)
+    }
+  }, 'Exchange rates');
+
+  function toggleMaintenance() {
+    const on = document.getElementById('s-maintenance').checked;
+    if (on) showToast('⚠️ Site is now in maintenance mode!', 'error');
+  }
+
+  checkAdmin().then(loadSettings);
+</script>
+</body>
+</html>

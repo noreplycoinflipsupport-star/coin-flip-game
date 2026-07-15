@@ -1,0 +1,33 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: coinflip-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+  app:
+    build:
+      context: ./backend
+    container_name: coinflip-app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./frontend:/frontend
+    depends_on:
+      - mongodb
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/coinflip
+      - NODE_ENV=development
+      - PORT=5000
+      - JWT_SECRET=nprawkHev6yFzMRdjD3B8uLli2QgVEt5qfs07XCbPK9NWSYZGJh4UOmoAcxTI1
+      - JWT_EXPIRES_IN=7d
+      - ADMIN_SECRET=a9f8d2b1e7c3f4a6b8d0e2f4c6a8b0d2
+      - FRONTEND_URL=http://localhost:5000
+      - RATE_LIMIT_WINDOW_MS=60000
+      - RATE_LIMIT_MAX=200
+
+volumes:
+  mongo-data:

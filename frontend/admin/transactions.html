@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transactions - Admin CoinFlip</title>
+  <link rel="manifest" href="/manifest.json" />
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="toast-container" id="toast-container"></div>
+
+<div class="admin-layout">
+  <aside class="sidebar">
+    <a href="/admin/" class="sidebar-logo">
+      <span class="logo-emoji">🪙</span>
+      <span class="logo-text">CoinFlip</span>
+      <span class="admin-badge">Admin</span>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Overview</div>
+      <a href="/admin/" class="sidebar-link"><span class="icon">📊</span> Dashboard</a>
+      <div class="sidebar-section-label">Management</div>
+      <a href="/admin/users.html" class="sidebar-link"><span class="icon">👥</span> Users</a>
+      <a href="/admin/transactions.html" class="sidebar-link active"><span class="icon">💰</span> Transactions</a>
+      <a href="/admin/game-history.html" class="sidebar-link"><span class="icon">🎮</span> Game History</a>
+      <div class="sidebar-section-label">Configuration</div>
+      <a href="/admin/settings.html" class="sidebar-link"><span class="icon">⚙️</span> Settings</a>
+      <a href="/admin/create-admin.html" class="sidebar-link"><span class="icon">👑</span> Create Admin</a>
+      <a href="/admin/live-control.html" class="sidebar-link"><span class="icon">🎯</span> Session Control</a>
+      <a href="/admin/free-control.html" class="sidebar-link"><span class="icon">🎮</span> Free Control</a>
+      <a href="/admin/wallet.html" class="sidebar-link"><span class="icon">🏦</span> Platform Wallet</a>
+      <div class="sidebar-section-label">Account</div>
+      <a href="/" class="sidebar-link"><span class="icon">🌐</span> View Site</a>
+      <a href="/admin/change-password.html" class="sidebar-link"><span class="icon">🔑</span> Change Password</a>
+      <a href="#" class="sidebar-link" onclick="localStorage.removeItem('cf_token');window.location.href='/login.html'"><span class="icon">🚪</span> Sign Out</a>
+    </nav>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <span class="admin-page-title">Transactions</span>
+      <div class="admin-topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="toggleTheme()">🌙</button>
+      </div>
+    </header>
+
+    <div class="admin-content">
+
+      <!-- Filter Bar -->
+      <div class="data-table-card" style="padding:16px 20px; margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <select class="form-select" id="filter-type" onchange="loadTransactions(1)" style="width:150px;">
+          <option value="">All Types</option>
+          <option value="deposit">Deposit</option>
+          <option value="withdrawal">Withdrawal</option>
+          <option value="game_win">Game Win</option>
+          <option value="game_loss">Game Loss</option>
+          <option value="referral_bonus">Referral</option>
+          <option value="manual_credit">Manual Credit</option>
+        </select>
+        <select class="form-select" id="filter-status" onchange="loadTransactions(1)" style="width:140px;">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="completed">Completed</option>
+        </select>
+        <div style="margin-left:auto; font-size:13px; color:var(--admin-text-sec);">
+          Total: <strong id="tx-total">0</strong> transactions
+        </div>
+      </div>
+
+      <!-- Transactions Table -->
+      <div class="data-table-card">
+        <div class="data-table-header">
+          <div class="data-table-title">💰 All Transactions</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tx-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:20px;">Loading...</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Approve/Reject Modal -->
+<div class="modal-overlay" id="action-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Approve Transaction</span>
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:16px;color:var(--admin-text-sec);font-size:14px;" id="modal-desc">Are you sure?</p>
+      <div class="form-group">
+        <label class="form-label">Admin Note (Optional)</label>
+        <input type="text" id="admin-note" class="form-input" placeholder="Add a note..." />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="modal-confirm-btn" onclick="confirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  let pendingAction = null;
+  let currentPage = 1;
+
+  async function loadTransactions(page = 1) {
+    currentPage = page;
+    const type = document.getElementById('filter-type').value;
+    const status = document.getElementById('filter-status').value;
+    let url = `/admin/transactions?page=${page}&limit=20`;
+    if (type) url += `&type=${type}`;
+    if (status) url += `&status=${status}`;
+
+    const data = await apiCall(url);
+    if (!data.success) return;
+
+    document.getElementById('tx-total').textContent = data.total;
+    const tbody = document.getElementById('tx-tbody');
+    tbody.innerHTML = '';
+
+    if (data.transactions.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--admin-text-sec);">No transactions found</td></tr>';
+      return;
+    }
+
+    data.transactions.forEach(t => {
+      const isPending = t.status === 'pending' && (t.type === 'deposit' || t.type === 'withdrawal');
+      const sym = t.currency === 'USD' ? '$' : t.currency === 'EUR' ? '€' : '₹';
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>
+          <div style="font-weight:500">${t.userId?.name || 'Unknown'}</div>
+          <div style="font-size:11px;color:var(--admin-text-sec)">${t.userId?.email || ''}</div>
+        </td>
+        <td>${t.type.replace(/_/g, ' ')}</td>
+        <td style="font-weight:600">${sym}${t.amount.toFixed(2)}</td>
+        <td>${t.paymentMethod}</td>
+        <td><span class="badge badge-${t.status}">${t.status}</span></td>
+        <td style="font-size:12px">${new Date(t.createdAt).toLocaleString()}</td>
+        <td>
+          ${isPending ? `
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-success btn-sm" onclick="openAction('${t._id}','approve','${t.type}','${sym}${t.amount.toFixed(2)}','${t.userId?.name}')">✅ Approve</button>
+              <button class="btn btn-danger btn-sm" onclick="openAction('${t._id}','reject','${t.type}','${sym}${t.amount.toFixed(2)}','${t.userId?.name}')">❌ Reject</button>
+            </div>
+          ` : `<span style="color:var(--admin-text-sec);font-size:12px">${t.adminNote || '—'}</span>`}
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    // Pagination
+    renderPagination(page, data.pages);
+  }
+
+  function renderPagination(current, total) {
+    const p = document.getElementById('pagination');
+    p.innerHTML = '';
+    if (total <= 1) return;
+    const prev = document.createElement('button');
+    prev.className = 'page-btn'; prev.textContent = '← Prev'; prev.disabled = current <= 1;
+    prev.onclick = () => loadTransactions(current - 1);
+    p.appendChild(prev);
+    for (let i = Math.max(1, current-2); i <= Math.min(total, current+2); i++) {
+      const btn = document.createElement('button');
+      btn.className = `page-btn ${i === current ? 'active' : ''}`;
+      btn.textContent = i; btn.onclick = () => loadTransactions(i);
+      p.appendChild(btn);
+    }
+    const next = document.createElement('button');
+    next.className = 'page-btn'; next.textContent = 'Next →'; next.disabled = current >= total;
+    next.onclick = () => loadTransactions(current + 1);
+    p.appendChild(next);
+  }
+
+  function openAction(id, action, type, amount, userName) {
+    pendingAction = { id, action };
+    const isApprove = action === 'approve';
+    document.getElementById('modal-title').textContent = isApprove ? '✅ Approve Transaction' : '❌ Reject Transaction';
+    document.getElementById('modal-desc').textContent = `${isApprove ? 'Approve' : 'Reject'} ${type.replace('_',' ')} of ${amount} for ${userName}?`;
+    const btn = document.getElementById('modal-confirm-btn');
+    btn.className = `btn ${isApprove ? 'btn-success' : 'btn-danger'}`;
+    btn.textContent = isApprove ? 'Approve' : 'Reject';
+    document.getElementById('action-modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('action-modal').classList.remove('open');
+    pendingAction = null;
+    document.getElementById('admin-note').value = '';
+  }
+
+  async function confirmAction() {
+    if (!pendingAction) return;
+    const note = document.getElementById('admin-note').value;
+    const endpoint = `/admin/transactions/${pendingAction.id}/${pendingAction.action}`;
+    const data = await apiCall(endpoint, 'PATCH', { adminNote: note });
+    if (data.success) {
+      showToast(`Transaction ${pendingAction.action}d successfully!`, 'success');
+      closeModal();
+      loadTransactions(currentPage);
+    } else {
+      showToast(data.message, 'error');
+    }
+  }
+
+  if (!token) window.location.href = '/login.html';
+  else loadTransactions();
+</script>
+</body>
+</html>

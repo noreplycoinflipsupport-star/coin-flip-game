@@ -1,0 +1,22 @@
+{
+  "name": "Coin Flip - Google Staking Game",
+  "short_name": "CoinFlip",
+  "description": "Stake and flip coins online. Google-style UI with real and free flip modes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a73e8",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

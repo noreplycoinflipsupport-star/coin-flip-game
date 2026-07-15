@@ -1,0 +1,172 @@
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
+const path = require('path');
+const fs = require('fs');
+const connectDB = require('./config/db');
+const logger = require('./utils/logger');
+
+const app = express();
+
+app.set('trust proxy', 1);
+
+// Ensure logs directory exists
+const logDir = path.join(__dirname, 'logs');
+if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+
+// Connect Database
+connectDB().then(() => {
+  require('./config/seed')();
+});
+
+// Rate Limiting
+const rateLimiter = require('./middleware/rateLimiter');
+app.use('/api', rateLimiter);
+
+// Security headers
+const cspDirectives = {
+  defaultSrc: ["'self'"],
+  scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+  scriptSrcAttr: ["'self'", "'unsafe-inline'"],
+  styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+  fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+  imgSrc: ["'self'", 'data:'],
+  connectSrc: ["'self'"]
+};
+if (process.env.FRONTEND_URL) {
+  cspDirectives.connectSrc.push(process.env.FRONTEND_URL);
+}
+app.use(helmet({
+  contentSecurityPolicy: { directives: cspDirectives },
+  hsts: process.env.NODE_ENV === 'production' ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false
+}));
+
+// CORS - support comma-separated origins
+const corsOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(s => s.trim())
+  : ['http://localhost:5000', 'http://localhost:3000', 'http://127.0.0.1:5000'];
+app.use(cors({ origin: corsOrigins, credentials: true }));
+
+app.use(cookieParser());
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// Request logging
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (process.env.NODE_ENV === 'production') {
+      logger.info(`${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
+    } else {
+      logger.debug(`${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms`);
+    }
+  });
+  next();
+});
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// API Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/game', require('./routes/game'));
+app.use('/api/wallet', require('./routes/wallet'));
+app.use('/api/referral', require('./routes/referral'));
+app.use('/api/admin', require('./routes/admin'));
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, message: 'CoinFlip API running', time: new Date() });
+});
+
+// Public settings — only exposes safe, non-sensitive fields for frontend display
+app.get('/api/settings-public', async (req, res) => {
+  try {
+    const Settings = require('./models/Settings');
+    const settings = await Settings.getSettings();
+    res.json({
+      announcementEnabled: settings.announcementEnabled,
+      announcement: settings.announcement,
+      maintenanceMode: settings.maintenanceMode,
+      maintenanceMessage: settings.maintenanceMessage,
+      minBet: settings.minBet,
+      maxBet: settings.maxBet,
+      commissionPercent: settings.commissionPercent
+    });
+  } catch (e) {
+    res.status(500).json({ success: false });
+  }
+});
+
+// Serve admin HTML files explicitly
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/admin', 'index.html'));
+});
+app.get('/admin/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/admin', 'index.html'));
+});
+app.get('/admin/:page', (req, res) => {
+  const page = req.params.page;
+  const filePath = path.join(__dirname, '../frontend/admin', page.endsWith('.html') ? page : `${page}.html`);
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.sendFile(path.join(__dirname, '../frontend/admin', 'index.html'));
+  }
+});
+
+// SPA fallback
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
+  }
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  logger.error('Unhandled error', { error: err.message, stack: err.stack, url: req.originalUrl, method: req.method });
+  res.status(500).json({ success: false, message: 'Internal server error' });
+});
+
+// Unhandled rejection / exception logging
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Rejection', { error: reason });
+});
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception', { error: err.message, stack: err.stack });
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  const { stopSessionTimer } = require('./services/sessionManager');
+  stopSessionTimer();
+  process.exit(0);
+});
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  const { stopSessionTimer } = require('./services/sessionManager');
+  stopSessionTimer();
+  process.exit(0);
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  logger.info(`🚀 CoinFlip Server running on port ${PORT}`);
+  logger.info(`🌐 Frontend: http://localhost:${PORT}`);
+  logger.info(`📡 API: http://localhost:${PORT}/api`);
+  logger.info(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+  const { startSessionTimer, ensureActiveSession } = require('./services/sessionManager');
+  ensureActiveSession().then(() => {
+    logger.info('Session system initialized');
+    startSessionTimer();
+    logger.info('Session timer started');
+  });
+});
+
+module.exports = app;

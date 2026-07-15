@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Coin Flip — Google</title>
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <meta name="description" content="Flip a coin online — free or real money staking game. Google-style coin flip." />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap" />
+  <link rel="stylesheet" href="/css/style2.css?v=2" />
+</head>
+<body>
+
+<!-- Confetti Canvas -->
+<canvas id="confetti-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;"></canvas>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+  <a href="/" class="header-logo" id="home-link">
+    <div class="logo-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" fill="#fbbc04"/>
+        <circle cx="12" cy="12" r="7" fill="#f29900" opacity="0.5"/>
+        <text x="12" y="16" text-anchor="middle" font-size="11" fill="#7a5000" font-weight="700">₿</text>
+      </svg>
+    </div>
+    <span>CoinFlip</span>
+  </a>
+
+  <div class="header-actions">
+    <!-- Balance -->
+    <div class="balance-chip" id="balance-chip" onclick="window.location.href='/wallet.html'" style="display:none">
+      <span class="currency-symbol" id="header-currency-symbol">₹</span>
+      <span id="header-balance">0.00</span>
+    </div>
+
+    <!-- Currency Selector -->
+    <div class="currency-selector" id="currency-selector-wrap" style="display:none">
+      <button class="currency-btn" id="currency-btn" onclick="toggleCurrencyDropdown()">
+        <span id="selected-currency">INR</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="currency-dropdown" id="currency-dropdown">
+        <div class="currency-option active" onclick="setCurrency('INR')">🇮🇳 INR</div>
+        <div class="currency-option" onclick="setCurrency('USD')">🇺🇸 USD</div>
+        <div class="currency-option" onclick="setCurrency('EUR')">🇪🇺 EUR</div>
+        <div class="currency-option" onclick="setCurrency('GBP')">🇬🇧 GBP</div>
+      </div>
+    </div>
+
+    <!-- Theme -->
+    <button class="btn-icon" id="theme-btn" onclick="toggleTheme()">🌙</button>
+
+    <!-- Auth buttons -->
+    <div id="auth-buttons" class="auth-buttons">
+      <a href="/login.html" class="btn btn-outline" id="login-btn">Sign in</a>
+      <a href="/register.html" class="btn btn-primary" id="register-btn">Get started</a>
+    </div>
+    <div id="user-menu" style="display:none">
+      <a href="/profile.html" id="profile-btn-header" class="avatar-btn" aria-label="Profile">U</a>
+    </div>
+  </div>
+</header>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ===== ANNOUNCEMENT BAR ===== -->
+<div class="announcement-bar hidden" id="announcement-bar">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.81 3.37 2 2 0 0 1 3.8 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+  <span id="announcement-text"></span>
+</div>
+
+<!-- ===== MAIN ===== -->
+<main class="main-container">
+
+  <!-- ===== GAME CARD ===== -->
+  <div class="game-card" id="game-card">
+
+    <!-- Card Header -->
+    <div class="game-card-header">
+      <div class="game-title">
+        <div class="game-title-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" fill="#fbbc04"/>
+            <circle cx="12" cy="12" r="6" fill="#f29900" opacity="0.6"/>
+            <circle cx="12" cy="12" r="3" fill="#e8a000" opacity="0.4"/>
+          </svg>
+        </div>
+        <h1>Coin Flip</h1>
+      </div>
+
+      <!-- Mode Toggle -->
+      <div class="mode-toggle" role="tablist" aria-label="Game mode">
+        <button class="mode-btn active" id="free-mode-btn" onclick="setMode('free')" role="tab" aria-selected="true" aria-controls="game-content">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Just Flip
+        </button>
+        <button class="mode-btn real-mode" id="real-mode-btn" onclick="setMode('real')" role="tab" aria-selected="false">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Real Money
+        </button>
+      </div>
+    </div>
+
+    <!-- Coin + Controls -->
+    <div class="coin-section" id="game-content" role="tabpanel">
+
+      <!-- Streak + Probability Row -->
+      <div class="meta-row">
+        <div class="streak-display" id="streak-display" style="visibility:hidden">
+          <span class="streak-label">Streak</span>
+          <span class="streak-value" id="streak-count">0</span>
+          <span class="streak-emoji" id="streak-emoji">🔥</span>
+        </div>
+
+        <div class="probability-pill">
+          <span class="prob-label">50%</span>
+          <div class="prob-bar">
+            <div class="prob-fill prob-heads" style="width:50%"></div>
+            <div class="prob-fill prob-tails" style="width:50%"></div>
+          </div>
+          <span class="prob-label">50%</span>
+        </div>
+
+        <div class="session-info" id="session-info" style="visibility:hidden">
+          <span id="session-wins" class="session-wins">0W</span>
+          <span class="session-sep">/</span>
+          <span id="session-losses" class="session-losses">0L</span>
+        </div>
+      </div>
+
+      <!-- Coin -->
+      <div class="coin-wrapper">
+        <div class="coin-shadow"></div>
+        <div class="coin-container" id="coin-container" aria-label="Coin" role="img" aria-live="polite" aria-atomic="true">
+          <div class="coin" id="coin">
+            <div class="coin-face coin-heads" aria-hidden="true">
+              <div class="coin-ring"></div>
+              <div class="coin-inner">
+                <span style="font-size:60px; line-height:1; margin-top:-6px">👑</span>
+                <span class="coin-text">HEADS</span>
+              </div>
+            </div>
+            <div class="coin-face coin-tails" aria-hidden="true">
+              <div class="coin-ring"></div>
+              <div class="coin-inner">
+                <span style="font-size:52px">🦁</span>
+                <span class="coin-text">TAILS</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Banner -->
+      <div class="result-banner" id="result-banner" role="status" aria-live="polite">
+        <span id="result-icon" class="result-icon-el">🎉</span>
+        <div class="result-content">
+          <span id="result-title" class="result-title">You Win!</span>
+          <span id="result-sub" class="result-sub"></span>
+        </div>
+      </div>
+
+      
+
+      <!-- Controls -->
+      <div class="bet-controls">
+
+        <!-- Side Selection -->
+        <div class="control-group">
+          <div class="bet-label">Choose your side</div>
+          <div class="side-selector" style="margin-top: 8px;" role="group" aria-label="Choose coin side">
+            <button class="side-btn heads-btn selected" id="heads-btn" onclick="selectSide('heads')" aria-pressed="true">
+              <span style="font-size:24px">👑</span>
+              <span class="side-label">Heads</span>
+              <span class="side-odds">50%</span>
+            </button>
+            <button class="side-btn tails-btn" id="tails-btn" onclick="selectSide('tails')" aria-pressed="false">
+              <span style="font-size:24px">🦁</span>
+              <span class="side-label">Tails</span>
+              <span class="side-odds">50%</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bet Amount (Real mode only) -->
+        <div class="bet-section control-group" id="bet-section" style="display:none">
+          <div class="bet-label">Bet Amount</div>
+          <div class="bet-input-row">
+            <div class="bet-currency-label" id="bet-currency-label">₹</div>
+            <input type="number" class="bet-input" id="bet-amount" value="50" min="50" placeholder="Enter amount" aria-label="Bet amount" />
+            <button class="bet-half-btn" onclick="halveAmount()" title="Half bet" aria-label="Halve bet">½</button>
+            <button class="bet-double-btn" onclick="doubleAmount()" title="Double bet" aria-label="Double bet">2×</button>
+          </div>
+          <div class="quick-bets" role="group" aria-label="Quick bet amounts">
+            <button class="quick-bet-btn" onclick="setBet(50)" id="qbet-1">₹50</button>
+            <button class="quick-bet-btn" onclick="setBet(100)" id="qbet-2">₹100</button>
+            <button class="quick-bet-btn" onclick="setBet(250)" id="qbet-3">₹250</button>
+            <button class="quick-bet-btn" onclick="setBet(500)" id="qbet-4">₹500</button>
+            <button class="quick-bet-btn" onclick="setBet(1000)" id="qbet-5">₹1K</button>
+            <button class="quick-bet-btn max-btn" onclick="setMaxBet()" id="qbet-max">Max</button>
+          </div>
+        </div>
+
+        <!-- Flip Button -->
+        <button class="flip-btn free-mode-btn" id="flip-btn" onclick="doFlip()" aria-label="Flip the coin">
+          <span class="flip-btn-inner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8l4 4-4 4"/></svg>
+            <span id="flip-btn-text">Flip Coin</span>
+          </span>
+          <span class="flip-btn-ripple"></span>
+        </button>
+
+        <!-- Balance info (real mode) -->
+        <div id="balance-info" class="balance-info-bar" style="display:none">
+          <div class="balance-info-item">
+            <span class="bi-label">Balance</span>
+            <strong id="game-balance">₹0.00</strong>
+          </div>
+          <div class="balance-info-sep"></div>
+          <div class="balance-info-item">
+            <span class="bi-label">Commission</span>
+            <strong>5%</strong>
+          </div>
+          <div class="balance-info-sep"></div>
+          <div class="balance-info-item">
+            <span class="bi-label">Min Bet</span>
+            <strong>₹50</strong>
+          </div>
+          <a href="/wallet.html" class="bi-add-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row" id="stats-row" style="display:none">
+      <div class="stat-item">
+        <div class="stat-value" id="stat-total">0</div>
+        <div class="stat-label">Total Flips</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value text-green" id="stat-wins">0</div>
+        <div class="stat-label">Wins</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value text-red" id="stat-losses">0</div>
+        <div class="stat-label">Losses</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value text-blue" id="stat-winrate">0%</div>
+        <div class="stat-label">Win Rate</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== HISTORY / REFERRAL TABS ===== -->
+  <div class="card" id="info-card">
+    <div class="tab-bar" role="tablist">
+      <button class="tab-btn active" onclick="switchTab('history')" id="tab-history" role="tab" aria-selected="true" aria-controls="tab-content-history">
+        Recent Flips
+      </button>
+      <button class="tab-btn" onclick="switchTab('referral')" id="tab-referral" role="tab" aria-selected="false" aria-controls="tab-content-referral">
+        Referral
+      </button>
+    </div>
+
+    <!-- History Tab -->
+    <div id="tab-content-history" role="tabpanel">
+      <div id="history-empty" class="empty-state">
+        <div class="empty-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        </div>
+        <p>No flips yet. Start playing!</p>
+      </div>
+      <table class="history-table" id="history-table" style="display:none" aria-label="Flip history">
+        <thead>
+          <tr>
+            <th>Result</th>
+            <th>Your Pick</th>
+            <th>Bet</th>
+            <th>Outcome</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="history-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Referral Tab -->
+    <div id="tab-content-referral" style="display:none" role="tabpanel">
+      <div id="referral-logged-out" class="empty-state">
+        <p style="color:var(--text-secondary); margin-bottom: 16px;">Sign in to access your referral code and earn rewards!</p>
+        <a href="/register.html" class="btn btn-primary">Create Account</a>
+      </div>
+      <div id="referral-content" style="display:none">
+        <div style="margin-bottom: 16px;">
+          <div class="bet-label">Your Referral Code</div>
+          <div class="referral-code-row">
+            <div class="referral-code-box" id="referral-code-display">------</div>
+            <button class="btn btn-outline" onclick="copyReferralCode()" aria-label="Copy referral code">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+        </div>
+        <div class="referral-stats">
+          <div class="stat-item" style="background:var(--surface-2); border-radius:var(--radius); padding:12px;">
+            <div class="stat-value text-blue" id="ref-total">0</div>
+            <div class="stat-label">Referred</div>
+          </div>
+          <div class="stat-item" style="background:var(--surface-2); border-radius:var(--radius); padding:12px;">
+            <div class="stat-value text-green" id="ref-earnings">₹0</div>
+            <div class="stat-label">Earnings</div>
+          </div>
+          <div class="stat-item" style="background:var(--surface-2); border-radius:var(--radius); padding:12px;">
+            <div class="stat-value">2%</div>
+            <div class="stat-label">Commission</div>
+          </div>
+        </div>
+        <button class="btn btn-primary w-full mt-16" onclick="shareReferral()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share Referral Link
+        </button>
+      </div>
+    </div>
+  </div>
+
+  
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div class="footer-links">
+    <a href="/wallet.html">Wallet</a>
+    <span class="footer-dot">·</span>
+    <a href="/referral.html">Referral</a>
+    <span class="footer-dot">·</span>
+    <a href="/terms.html">Terms</a>
+    <span class="footer-dot">·</span>
+    <a href="/privacy.html">Privacy</a>
+    <span class="footer-dot">·</span>
+    <a href="/profile.html">Profile</a>
+  </div>
+  <div class="footer-sub">© 2025 CoinFlip · Sub-powered by Google · Fair play guaranteed</div>
+</footer>
+
+<!-- ===== BOTTOM NAV (mobile) ===== -->
+<nav class="bottom-nav" aria-label="Main navigation">
+  <div class="bottom-nav-items">
+    <a href="/" class="bottom-nav-item active" id="nav-home">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <span>Play</span>
+    </a>
+    <a href="/wallet.html" class="bottom-nav-item" id="nav-wallet">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span>Wallet</span>
+    </a>
+    <a href="/referral.html" class="bottom-nav-item" id="nav-referral">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <span>Referral</span>
+    </a>
+    <a href="/profile.html" class="bottom-nav-item" id="nav-profile">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Profile</span>
+    </a>
+  </div>
+</nav>
+
+<script src="/js/app2.js?v=2"></script>
+<script src="/js/game2.js?v=2"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
+</script>
+</body>
+</html>

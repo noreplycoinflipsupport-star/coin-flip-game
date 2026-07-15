@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wallet - CoinFlip</title>
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <meta name="description" content="Manage your CoinFlip wallet - deposit and withdraw funds" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/css/style2.css" />
+  <style>
+    .wallet-balance-card {
+      background: linear-gradient(135deg, #1a73e8, #0d47a1);
+      color: white;
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(26,115,232,.3);
+    }
+    .wallet-balance-label { font-size: 13px; opacity: 0.8; margin-bottom: 4px; }
+    .wallet-balance-amount { font-family: 'Google Sans', sans-serif; font-size: 36px; font-weight: 700; margin-bottom: 16px; }
+    .wallet-quick-actions { display: flex; gap: 12px; }
+    .wallet-action-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,.4);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.15);
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .wallet-action-btn:hover { background: rgba(255,255,255,.25); }
+    .method-card {
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+    }
+    .method-card.selected { border-color: var(--google-blue); background: rgba(26,115,232,.04); }
+    .method-icon { font-size: 24px; width: 36px; text-align: center; }
+    .method-info { flex: 1; }
+    .method-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .method-desc { font-size: 12px; color: var(--text-secondary); }
+    .payment-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <a href="/" class="header-logo">
+    <div class="logo-icon">🪙</div>
+    <span>CoinFlip</span>
+  </a>
+  <div class="header-actions">
+    <button class="btn-icon" id="theme-btn" onclick="toggleTheme()">🌙</button>
+    <button class="btn btn-outline" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+
+<div class="toast-container" id="toast-container"></div>
+
+<main class="main-container">
+
+  <!-- Balance Card -->
+  <div class="wallet-balance-card">
+    <div class="wallet-balance-label">Total Balance</div>
+    <div class="wallet-balance-amount" id="wallet-balance">₹0.00</div>
+    <div class="wallet-quick-actions">
+      <button class="wallet-action-btn" onclick="showTab('deposit')">⬇️ Deposit</button>
+      <button class="wallet-action-btn" onclick="showTab('withdraw')">⬆️ Withdraw</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-deposit" onclick="showTab('deposit')">Deposit</button>
+    <button class="tab-btn" id="tab-withdraw" onclick="showTab('withdraw')">Withdraw</button>
+    <button class="tab-btn" id="tab-history" onclick="showTab('history')">History</button>
+  </div>
+
+  <!-- ===== DEPOSIT TAB ===== -->
+  <div id="content-deposit">
+    <div class="card">
+      <div class="card-title">💳 Choose Payment Method</div>
+      <div class="payment-methods">
+        <div class="method-card selected" id="method-UPI" onclick="selectMethod('UPI')">
+          <div class="method-icon">📱</div>
+          <div class="method-info">
+            <div class="method-name">UPI</div>
+            <div class="method-desc">GPay, PhonePe, Paytm</div>
+          </div>
+        </div>
+        <div class="method-card" id="method-card" onclick="selectMethod('card')">
+          <div class="method-icon">💳</div>
+          <div class="method-info">
+            <div class="method-name">Card</div>
+            <div class="method-desc">Debit / Credit</div>
+          </div>
+        </div>
+        <div class="method-card" id="method-net_banking" onclick="selectMethod('net_banking')">
+          <div class="method-icon">🏦</div>
+          <div class="method-info">
+            <div class="method-name">Net Banking</div>
+            <div class="method-desc">All banks</div>
+          </div>
+        </div>
+        <div class="method-card" id="method-crypto" onclick="selectMethod('crypto')">
+          <div class="method-icon">₿</div>
+          <div class="method-info">
+            <div class="method-name">Crypto</div>
+            <div class="method-desc">USDT, BTC</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPI Details -->
+      <div id="upi-details">
+        <div class="form-group">
+          <label class="form-label">UPI ID</label>
+          <input type="text" id="upi-id" class="form-input" placeholder="yourname@upi" />
+        </div>
+        <div style="padding: 12px; background: rgba(251,188,4,.1); border-radius: var(--radius); border: 1px solid rgba(251,188,4,.3); font-size:13px; color:#92400e; margin-bottom:16px;">
+          ⚠️ Gateway integration coming soon. Your request will be reviewed manually by admin.
+        </div>
+      </div>
+
+      <!-- Crypto Details -->
+      <div id="crypto-details" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Your Crypto Address (for refund)</label>
+          <input type="text" id="crypto-address" class="form-input" placeholder="0x... or TRC20 address" />
+        </div>
+        <div style="padding: 12px; background: rgba(251,188,4,.1); border-radius: var(--radius); border: 1px solid rgba(251,188,4,.3); font-size:13px; color:#92400e; margin-bottom:16px;">
+          ⚠️ Crypto gateway coming soon. Admin will provide deposit address after review.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Amount (Min ₹50)</label>
+        <div class="bet-input-row">
+          <div class="bet-currency-label" id="deposit-currency-label">₹</div>
+          <input type="number" id="deposit-amount" class="form-input" style="border:none" placeholder="Enter amount" min="50" />
+        </div>
+      </div>
+      <div class="quick-bets" style="margin-bottom:16px;">
+        <button class="quick-bet-btn" onclick="document.getElementById('deposit-amount').value=50">₹50</button>
+        <button class="quick-bet-btn" onclick="document.getElementById('deposit-amount').value=100">₹100</button>
+        <button class="quick-bet-btn" onclick="document.getElementById('deposit-amount').value=500">₹500</button>
+        <button class="quick-bet-btn" onclick="document.getElementById('deposit-amount').value=1000">₹1000</button>
+        <button class="quick-bet-btn" onclick="document.getElementById('deposit-amount').value=5000">₹5000</button>
+      </div>
+
+      <button class="btn btn-primary w-full" style="width:100%;padding:14px;font-size:15px;border-radius:var(--radius);" onclick="submitDeposit()" id="deposit-btn">
+        Request Deposit
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== WITHDRAW TAB ===== -->
+  <div id="content-withdraw" style="display:none">
+    <div class="card">
+      <div class="card-title">💸 Withdraw Funds</div>
+      <div style="padding: 12px; background: rgba(52,168,83,.1); border-radius: var(--radius); border: 1px solid rgba(52,168,83,.2); font-size:13px; color:#166534; margin-bottom:16px;">
+        ✅ Minimum withdrawal: ₹200 · Processed within 24 hours
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Withdrawal Method</label>
+        <select class="form-select" id="withdraw-method" onchange="updateWithdrawForm()">
+          <option value="UPI">UPI</option>
+          <option value="bank_transfer">Bank Transfer</option>
+        </select>
+      </div>
+
+      <div id="withdraw-upi">
+        <div class="form-group">
+          <label class="form-label">UPI ID</label>
+          <input type="text" id="withdraw-upi-id" class="form-input" placeholder="yourname@upi" />
+        </div>
+      </div>
+
+      <div id="withdraw-bank" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Account Number</label>
+          <input type="text" id="withdraw-acc" class="form-input" placeholder="Bank account number" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">IFSC Code</label>
+          <input type="text" id="withdraw-ifsc" class="form-input" placeholder="IFSC code" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bank Name</label>
+          <input type="text" id="withdraw-bank-name" class="form-input" placeholder="Bank name" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Amount (Min ₹200)</label>
+        <div class="bet-input-row">
+          <div class="bet-currency-label">₹</div>
+          <input type="number" id="withdraw-amount" class="form-input" style="border:none" placeholder="Enter amount" min="200" />
+        </div>
+        <div style="font-size:12px; color:var(--text-hint); margin-top:4px;">
+          Available: <span id="available-balance">₹0</span>
+        </div>
+      </div>
+
+      <button class="btn" style="width:100%;padding:14px;font-size:15px;border-radius:var(--radius);background:linear-gradient(135deg,#34a853,#1e7e34);color:white;" onclick="submitWithdrawal()" id="withdraw-btn">
+        Request Withdrawal
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== HISTORY TAB ===== -->
+  <div id="content-history" style="display:none">
+    <div class="card">
+      <div class="card-title">📋 Transaction History</div>
+      <table class="history-table" id="tx-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="tx-tbody"></tbody>
+      </table>
+      <div id="tx-empty" style="text-align:center;padding:24px;color:var(--text-hint);font-size:14px;">No transactions yet.</div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div><a href="/">Home</a> · <a href="/referral.html">Referral</a></div>
+  <div style="margin-top:6px;font-size:11px;color:var(--text-hint);">Sub-powered by Google</div>
+</footer>
+
+<nav class="bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="/" class="bottom-nav-item"><span>🪙</span><span>Play</span></a>
+    <a href="/wallet.html" class="bottom-nav-item active"><span>💰</span><span>Wallet</span></a>
+    <a href="/referral.html" class="bottom-nav-item"><span>🔗</span><span>Referral</span></a>
+    <a href="#" class="bottom-nav-item" onclick="logout()"><span>👤</span><span>Logout</span></a>
+  </div>
+</nav>
+
+<script src="/js/app2.js"></script>
+<script>
+  let selectedPayMethod = 'UPI';
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!localStorage.getItem('cf_token')) { window.location.href = '/login.html'; return; }
+    await loadUser();
+    updateWalletBalance();
+    loadTransactions();
+  });
+
+  function updateWalletBalance() {
+    if (!currentUser) return;
+    const bal = currentUser.balance[currentCurrency] || 0;
+    const sym = CURRENCY_SYMBOLS[currentCurrency];
+    document.getElementById('wallet-balance').textContent = `${sym}${bal.toFixed(2)}`;
+    document.getElementById('available-balance').textContent = `${sym}${bal.toFixed(2)}`;
+  }
+
+  function showTab(tab) {
+    ['deposit', 'withdraw', 'history'].forEach(t => {
+      document.getElementById(`content-${t}`).style.display = t === tab ? 'block' : 'none';
+      document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    });
+  }
+
+  function selectMethod(method) {
+    selectedPayMethod = method;
+    document.querySelectorAll('.method-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`method-${method}`).classList.add('selected');
+    document.getElementById('upi-details').style.display = method === 'crypto' ? 'none' : 'block';
+    document.getElementById('crypto-details').style.display = method === 'crypto' ? 'block' : 'none';
+  }
+
+  function updateWithdrawForm() {
+    const method = document.getElementById('withdraw-method').value;
+    document.getElementById('withdraw-upi').style.display = method === 'UPI' ? 'block' : 'none';
+    document.getElementById('withdraw-bank').style.display = method === 'bank_transfer' ? 'block' : 'none';
+  }
+
+  async function submitDeposit() {
+    const amount = parseFloat(document.getElementById('deposit-amount').value);
+    if (!amount || amount < 50) { showToast('Minimum deposit is ₹50', 'error'); return; }
+
+    const btn = document.getElementById('deposit-btn');
+    btn.innerHTML = '<div class="spinner" style="margin:auto;"></div>';
+    btn.disabled = true;
+
+    const paymentDetails = {};
+    if (selectedPayMethod === 'UPI') paymentDetails.upiId = document.getElementById('upi-id').value;
+    if (selectedPayMethod === 'crypto') paymentDetails.cryptoAddress = document.getElementById('crypto-address').value;
+
+    try {
+      const data = await apiCall('/wallet/deposit', 'POST', {
+        amount, currency: currentCurrency, paymentMethod: selectedPayMethod, paymentDetails
+      });
+      if (data.success) {
+        showToast('Deposit request submitted! Awaiting admin approval.', 'success');
+        loadTransactions();
+        showTab('history');
+      } else {
+        showToast(data.message, 'error');
+      }
+    } catch { showToast('Connection error', 'error'); }
+    btn.innerHTML = 'Request Deposit';
+    btn.disabled = false;
+  }
+
+  async function submitWithdrawal() {
+    const amount = parseFloat(document.getElementById('withdraw-amount').value);
+    if (!amount || amount < 200) { showToast('Minimum withdrawal is ₹200', 'error'); return; }
+
+    const btn = document.getElementById('withdraw-btn');
+    btn.innerHTML = '<div class="spinner" style="margin:auto;"></div>';
+    btn.disabled = true;
+
+    const method = document.getElementById('withdraw-method').value;
+    const paymentDetails = {};
+    if (method === 'UPI') paymentDetails.upiId = document.getElementById('withdraw-upi-id').value;
+    if (method === 'bank_transfer') {
+      paymentDetails.bankAccount = document.getElementById('withdraw-acc').value;
+      paymentDetails.bankIFSC = document.getElementById('withdraw-ifsc').value;
+      paymentDetails.bankName = document.getElementById('withdraw-bank-name').value;
+    }
+
+    try {
+      const data = await apiCall('/wallet/withdraw', 'POST', {
+        amount, currency: currentCurrency, paymentMethod: method, paymentDetails
+      });
+      if (data.success) {
+        showToast('Withdrawal request submitted!', 'success');
+        currentUser.balance[currentCurrency] = data.newBalance;
+        updateWalletBalance();
+        loadTransactions();
+        showTab('history');
+      } else {
+        showToast(data.message, 'error');
+      }
+    } catch { showToast('Connection error', 'error'); }
+    btn.innerHTML = 'Request Withdrawal';
+    btn.disabled = false;
+  }
+
+  async function loadTransactions() {
+    try {
+      const data = await apiCall('/wallet/transactions?limit=30');
+      if (data.success) {
+        const tbody = document.getElementById('tx-tbody');
+        const empty = document.getElementById('tx-empty');
+        tbody.innerHTML = '';
+        if (data.transactions.length === 0) { empty.style.display = 'block'; return; }
+        empty.style.display = 'none';
+        data.transactions.forEach(t => {
+          const sym = CURRENCY_SYMBOLS[t.currency] || '₹';
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${t.type.replace('_', ' ')}</td>
+            <td>${sym}${t.amount.toFixed(2)}</td>
+            <td>${t.paymentMethod}</td>
+            <td><span class="badge badge-${t.status}">${t.status}</span></td>
+            <td>${new Date(t.createdAt).toLocaleDateString()}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+    } catch { }
+  }
+</script>
+</body>
+</html>

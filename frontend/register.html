@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account - CoinFlip</title>
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <meta name="description" content="Create your CoinFlip account and start playing" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/css/style2.css" />
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--google-bg); padding: 16px; }
+    .auth-container { width: 100%; max-width: 440px; }
+    .auth-card { background: var(--surface); border-radius: var(--radius-xl); box-shadow: var(--shadow-2); padding: 36px; }
+    .auth-logo { text-align: center; margin-bottom: 8px; font-size: 40px; }
+    .auth-title { text-align: center; font-family: 'Google Sans', sans-serif; font-size: 24px; font-weight: 500; margin-bottom: 6px; }
+    .auth-subtitle { text-align: center; font-size: 14px; color: var(--text-secondary); margin-bottom: 28px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .otp-section { display: none; }
+    .otp-inputs { display: flex; gap: 10px; justify-content: center; margin: 12px 0; }
+    .otp-digit { width: 48px; height: 52px; border: 2px solid var(--border); border-radius: var(--radius); text-align: center; font-size: 20px; font-weight: 700; background: var(--surface); color: var(--text-primary); outline: none; }
+    .otp-digit:focus { border-color: var(--google-blue); }
+  </style>
+</head>
+<body>
+<div class="toast-container" id="toast-container"></div>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-logo">🪙</div>
+    <h1 class="auth-title">Create Account</h1>
+    <p class="auth-subtitle">Join CoinFlip and start playing</p>
+
+    <!-- Step 1: Registration Form -->
+    <div id="register-section">
+      <form id="register-form" onsubmit="handleRegister(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="name">Full Name</label>
+            <input type="text" id="name" class="form-input" placeholder="Your name" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="phone">Phone</label>
+            <input type="tel" id="phone" class="form-input" placeholder="+91..." required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <input type="email" id="email" class="form-input" placeholder="Enter your email" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="password-field">
+            <input type="password" id="password" class="form-input" placeholder="Min 6 characters" required minlength="6" />
+            <button type="button" class="password-toggle" onclick="togglePassword(this)">👁️</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="referral">Referral Code (Optional)</label>
+          <input type="text" id="referral" class="form-input" placeholder="Enter referral code" style="text-transform:uppercase" />
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="register-btn" style="width:100%; padding:14px; font-size:15px; border-radius:var(--radius); margin-top:8px;">
+          Create Account
+        </button>
+      </form>
+
+      <div style="text-align:center; margin-top: 20px; font-size:14px; color:var(--text-secondary);">
+        Already have an account? <a href="/login.html" style="color:var(--google-blue);">Sign In</a>
+      </div>
+    </div>
+
+    <!-- Step 2: OTP Verification -->
+    <div class="otp-section" id="otp-section">
+      <p style="text-align:center; color:var(--text-secondary); font-size:14px; margin-bottom:16px;">
+        We sent a 6-digit OTP to your email. Enter it below.
+      </p>
+      <div class="otp-inputs" id="otp-inputs">
+        <input class="otp-digit" maxlength="1" id="otp-0" oninput="otpInput(0)" onkeydown="otpKeydown(event, 0)" />
+        <input class="otp-digit" maxlength="1" id="otp-1" oninput="otpInput(1)" onkeydown="otpKeydown(event, 1)" />
+        <input class="otp-digit" maxlength="1" id="otp-2" oninput="otpInput(2)" onkeydown="otpKeydown(event, 2)" />
+        <input class="otp-digit" maxlength="1" id="otp-3" oninput="otpInput(3)" onkeydown="otpKeydown(event, 3)" />
+        <input class="otp-digit" maxlength="1" id="otp-4" oninput="otpInput(4)" onkeydown="otpKeydown(event, 4)" />
+        <input class="otp-digit" maxlength="1" id="otp-5" oninput="otpInput(5)" onkeydown="otpKeydown(event, 5)" />
+      </div>
+      <button class="btn btn-primary" id="verify-btn" style="width:100%; padding:14px; border-radius:var(--radius);" onclick="handleVerifyOTP()">
+        Verify OTP
+      </button>
+      <div style="text-align:center; margin-top:12px;">
+        <button onclick="resendOTP()" style="background:none;border:none;color:var(--google-blue);cursor:pointer;font-size:13px;">
+          Resend OTP
+        </button>
+      </div>
+    </div>
+
+  </div>
+  <div style="text-align:center; margin-top: 16px; font-size:11px; color:var(--text-hint);">Sub-powered by Google</div>
+</div>
+
+<script src="/js/app2.js"></script>
+<script>
+  if (localStorage.getItem('cf_token')) window.location.href = '/';
+
+  // Pre-fill referral from URL
+  const urlRef = new URLSearchParams(window.location.search).get('ref');
+  if (urlRef) document.getElementById('referral').value = urlRef.toUpperCase();
+
+  let pendingUserId = null;
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('register-btn');
+    btn.innerHTML = '<div class="spinner" style="margin:auto;"></div>';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${API}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('name').value,
+          email: document.getElementById('email').value,
+          phone: document.getElementById('phone').value,
+          password: document.getElementById('password').value,
+          referralCode: document.getElementById('referral').value || null
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        pendingUserId = data.userId;
+        document.getElementById('register-section').style.display = 'none';
+        document.getElementById('otp-section').style.display = 'block';
+        showToast('OTP sent to your email!', 'success');
+        document.getElementById('otp-0').focus();
+      } else {
+        showToast(data.message, 'error');
+        btn.innerHTML = 'Create Account';
+        btn.disabled = false;
+      }
+    } catch {
+      showToast('Connection error', 'error');
+      btn.innerHTML = 'Create Account';
+      btn.disabled = false;
+    }
+  }
+
+  function otpInput(index) {
+    const val = document.getElementById(`otp-${index}`).value;
+    if (val && index < 5) document.getElementById(`otp-${index + 1}`).focus();
+  }
+
+  function otpKeydown(e, index) {
+    if (e.key === 'Backspace' && !document.getElementById(`otp-${index}`).value && index > 0) {
+      document.getElementById(`otp-${index - 1}`).focus();
+    }
+  }
+
+  function getOTP() {
+    let otp = '';
+    for (let i = 0; i < 6; i++) otp += document.getElementById(`otp-${i}`).value;
+    return otp;
+  }
+
+  async function handleVerifyOTP() {
+    const otp = getOTP();
+    if (otp.length !== 6) { showToast('Enter complete 6-digit OTP', 'error'); return; }
+
+    const btn = document.getElementById('verify-btn');
+    btn.innerHTML = '<div class="spinner" style="margin:auto;"></div>';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${API}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: pendingUserId, otp })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        localStorage.setItem('cf_token', data.token);
+        showToast('Account created! Welcome! 🎉', 'success');
+        setTimeout(() => window.location.href = '/', 1000);
+      } else {
+        showToast(data.message, 'error');
+        btn.innerHTML = 'Verify OTP';
+        btn.disabled = false;
+      }
+    } catch {
+      showToast('Connection error', 'error');
+      btn.innerHTML = 'Verify OTP';
+      btn.disabled = false;
+    }
+  }
+
+  let resendCooldown = false;
+  async function resendOTP() {
+    if (!pendingUserId || resendCooldown) return;
+    resendCooldown = true;
+    const btn = document.querySelector('#otp-section button:last-of-type');
+    if (btn) { btn.disabled = true; btn.textContent = 'Wait 30s...'; }
+    try {
+      await fetch(`${API}/auth/resend-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: pendingUserId })
+      });
+      showToast('OTP resent!', 'success');
+    } catch { showToast('Error resending OTP', 'error'); }
+    setTimeout(() => {
+      resendCooldown = false;
+      if (btn) { btn.disabled = false; btn.textContent = 'Resend OTP'; }
+    }, 30000);
+  }
+
+  // Auto-submit OTP when all 6 digits entered
+  document.addEventListener('input', (e) => {
+    if (e.target.classList.contains('otp-digit')) {
+      const otp = getOTP();
+      if (otp.length === 6) handleVerifyOTP();
+    }
+  });
+</script>
+</body>
+</html>

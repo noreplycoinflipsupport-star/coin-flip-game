@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Referral Program - CoinFlip</title>
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/css/style2.css" />
+</head>
+<body>
+
+<header class="header">
+  <a href="/" class="header-logo">
+    <div class="logo-icon">🪙</div>
+    <span>CoinFlip</span>
+  </a>
+  <div class="header-actions">
+    <button class="btn-icon" id="theme-btn" onclick="toggleTheme()">🌙</button>
+    <button class="btn btn-outline" onclick="logout()">Sign Out</button>
+  </div>
+</header>
+
+<div class="toast-container" id="toast-container"></div>
+
+<main class="main-container">
+
+  <div class="card" style="text-align: center; padding: 32px 20px;">
+    <div style="font-size: 48px; margin-bottom: 12px;">🔗</div>
+    <h1 style="font-family: 'Google Sans', sans-serif; font-size: 24px; font-weight: 500; margin-bottom: 8px;">Invite Friends & Earn Commission</h1>
+    <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto 24px; font-size: 14px;">
+      Share your referral link with friends. Whenever they win a game using real money, you earn a <strong class="text-green">2% cash commission</strong> directly to your wallet!
+    </p>
+
+    <div id="referral-logged-out" style="padding: 24px;">
+      <p style="color:var(--text-secondary); margin-bottom: 16px;">Sign in or Register to get your invite link.</p>
+      <a href="/login.html" class="btn btn-outline" style="margin-right:8px;">Sign In</a>
+      <a href="/register.html" class="btn btn-primary">Create Account</a>
+    </div>
+
+    <div id="referral-content" style="display:none; max-width: 440px; margin: 0 auto; text-align: left;">
+      <div class="form-group">
+        <label class="form-label">Your Referral Link</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="share-link-input" class="form-input" style="flex:1" readonly />
+          <button class="btn btn-outline" onclick="copyLink()">Copy</button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin: 24px 0;">
+        <div class="stat-item" style="background: var(--surface-2); border-radius: var(--radius-lg); padding: 20px;">
+          <div class="stat-value text-blue" id="ref-total">0</div>
+          <div class="stat-label">Total Referrals</div>
+        </div>
+        <div class="stat-item" style="background: var(--surface-2); border-radius: var(--radius-lg); padding: 20px;">
+          <div class="stat-value text-green" id="ref-earnings">₹0.00</div>
+          <div class="stat-label">Referral Income</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary w-full" style="width:100%; padding:14px; font-size:15px; border-radius:var(--radius);" onclick="shareReferral()">
+        📤 Share Invite
+      </button>
+    </div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="card">
+    <div class="card-title">🏆 Top Referrers</div>
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>User</th>
+          <th>Total Invited</th>
+          <th>Earned</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-tbody">
+        <tr><td colspan="4" style="text-align:center; padding:16px; color:var(--text-hint);">Loading leaderboard...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div><a href="/">Home</a> · <a href="/wallet.html">Wallet</a></div>
+  <div style="margin-top:6px;font-size:11px;color:var(--text-hint);">Sub-powered by Google</div>
+</footer>
+
+<nav class="bottom-nav">
+  <div class="bottom-nav-items">
+    <a href="/" class="bottom-nav-item"><span>🪙</span><span>Play</span></a>
+    <a href="/wallet.html" class="bottom-nav-item"><span>💰</span><span>Wallet</span></a>
+    <a href="/referral.html" class="bottom-nav-item active"><span>🔗</span><span>Referral</span></a>
+    <a href="#" class="bottom-nav-item" onclick="logout()"><span>👤</span><span>Logout</span></a>
+  </div>
+</nav>
+
+<script src="/js/app2.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (localStorage.getItem('cf_token')) {
+      await loadUser();
+      const code = currentUser.referralCode;
+      const link = `${window.location.origin}/register.html?ref=${code}`;
+      document.getElementById('share-link-input').value = link;
+      document.getElementById('referral-content').style.display = 'block';
+      document.getElementById('referral-logged-out').style.display = 'none';
+      updateReferralUI();
+    }
+    loadLeaderboard();
+  });
+
+  function updateReferralUI() {
+    if (!currentUser) return;
+    const sym = CURRENCY_SYMBOLS[currentCurrency] || '₹';
+    document.getElementById('ref-total').textContent = currentUser.totalGames > 0 ? 'Loading...' : '0';
+    // Load fresh stats from endpoint
+    loadReferralStats();
+  }
+
+  function copyLink() {
+    const link = document.getElementById('share-link-input');
+    link.select();
+    document.execCommand('copy');
+    showToast('Referral link copied!', 'success');
+  }
+
+  async function loadLeaderboard() {
+    try {
+      const res = await fetch(`${API}/referral/leaderboard`);
+      const data = await res.json();
+      if (data.success) {
+        const tbody = document.getElementById('leaderboard-tbody');
+        tbody.innerHTML = '';
+        if (data.leaderboard.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:16px;">No entries yet</td></tr>';
+          return;
+        }
+        data.leaderboard.forEach((u, i) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>#${i + 1}</td>
+            <td style="font-weight:500">${u.name}</td>
+            <td>${u.referralCount}</td>
+            <td class="text-green">₹${u.referralEarnings.toFixed(2)}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+    } catch { }
+  }
+</script>
+</body>
+</html>

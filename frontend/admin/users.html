@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users - Admin CoinFlip</title>
+  <link rel="manifest" href="/manifest.json" />
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="toast-container" id="toast-container"></div>
+
+<div class="admin-layout">
+  <aside class="sidebar">
+    <a href="/admin/" class="sidebar-logo">
+      <span class="logo-emoji">🪙</span>
+      <span class="logo-text">CoinFlip</span>
+      <span class="admin-badge">Admin</span>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Overview</div>
+      <a href="/admin/" class="sidebar-link"><span class="icon">📊</span> Dashboard</a>
+      <div class="sidebar-section-label">Management</div>
+      <a href="/admin/users.html" class="sidebar-link active"><span class="icon">👥</span> Users</a>
+      <a href="/admin/transactions.html" class="sidebar-link"><span class="icon">💰</span> Transactions</a>
+      <a href="/admin/game-history.html" class="sidebar-link"><span class="icon">🎮</span> Game History</a>
+      <div class="sidebar-section-label">Configuration</div>
+      <a href="/admin/settings.html" class="sidebar-link"><span class="icon">⚙️</span> Settings</a>
+      <a href="/admin/create-admin.html" class="sidebar-link"><span class="icon">👑</span> Create Admin</a>
+      <a href="/admin/live-control.html" class="sidebar-link"><span class="icon">🎯</span> Session Control</a>
+      <a href="/admin/free-control.html" class="sidebar-link"><span class="icon">🎮</span> Free Control</a>
+      <a href="/admin/wallet.html" class="sidebar-link"><span class="icon">🏦</span> Platform Wallet</a>
+      <div class="sidebar-section-label">Account</div>
+      <a href="/" class="sidebar-link"><span class="icon">🌐</span> View Site</a>
+      <a href="/admin/change-password.html" class="sidebar-link"><span class="icon">🔑</span> Change Password</a>
+      <a href="#" class="sidebar-link" onclick="localStorage.removeItem('cf_token');window.location.href='/login.html'"><span class="icon">🚪</span> Sign Out</a>
+    </nav>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <span class="admin-page-title">User Management</span>
+      <button class="btn btn-outline btn-sm" onclick="toggleTheme()">🌙</button>
+    </header>
+
+    <div class="admin-content">
+      <div class="data-table-card">
+        <div class="data-table-header">
+          <div class="data-table-title">👥 All Users</div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="search-input" id="search-input" placeholder="Search name, email, phone..." oninput="debounceSearch()" />
+            <select class="form-select" id="status-filter" onchange="loadUsers(1)" style="width:130px;">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="banned">Banned</option>
+            </select>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Balance (INR)</th>
+              <th>Games</th>
+              <th>Win Rate</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:20px;">Loading...</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="user-pagination"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- User Detail Modal -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header">
+      <span class="modal-title" id="user-modal-title">User Details</span>
+      <button class="btn btn-outline btn-sm" onclick="closeUserModal()">✕</button>
+    </div>
+    <div class="modal-body" id="user-modal-body">
+      <!-- Filled dynamically -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeUserModal()">Close</button>
+      <button class="btn btn-primary" id="save-user-btn" onclick="saveUser()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  let editingUserId = null;
+  let searchTimeout;
+
+  function debounceSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => loadUsers(1), 400);
+  }
+
+  async function loadUsers(page = 1) {
+    const search = document.getElementById('search-input').value;
+    const status = document.getElementById('status-filter').value;
+    let url = `/admin/users?page=${page}&limit=20`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (status) url += `&status=${status}`;
+
+    const data = await apiCall(url);
+    if (!data.success) return;
+
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = '';
+
+    if (data.users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--admin-text-sec);">No users found</td></tr>';
+      return;
+    }
+
+    data.users.forEach(u => {
+      const winRate = u.totalGames > 0 ? ((u.totalWins / u.totalGames) * 100).toFixed(0) : 0;
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>
+          <div style="font-weight:500">${u.name}</div>
+          <div style="font-size:11px;color:var(--admin-text-sec)">${u.email}</div>
+          <div style="font-size:10px;color:var(--admin-text-sec)">${u.phone}</div>
+        </td>
+        <td style="font-weight:600">₹${(u.balance?.INR || 0).toFixed(2)}</td>
+        <td>${u.totalGames}</td>
+        <td>${winRate}%</td>
+        <td><span class="badge badge-${u.status}">${u.status}</span>${u.role === 'admin' ? ' <span class="badge badge-admin">Admin</span>' : ''}</td>
+        <td style="font-size:12px">${new Date(u.createdAt).toLocaleDateString()}</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="openUserModal('${u._id}','${u.name}','${u.status}')">✏️ Edit</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    renderPagination(page, data.pages, 'user-pagination', loadUsers);
+  }
+
+  function renderPagination(current, total, elId, fn) {
+    const p = document.getElementById(elId);
+    p.innerHTML = '';
+    if (total <= 1) return;
+    [['← Prev', current - 1, current <= 1]].forEach(([label, pg, disabled]) => {
+      const b = document.createElement('button'); b.className = 'page-btn'; b.textContent = label;
+      b.disabled = disabled; b.onclick = () => fn(pg); p.appendChild(b);
+    });
+    for (let i = Math.max(1, current-2); i <= Math.min(total, current+2); i++) {
+      const b = document.createElement('button'); b.className = `page-btn ${i===current?'active':''}`;
+      b.textContent = i; b.onclick = () => fn(i); p.appendChild(b);
+    }
+    const b = document.createElement('button'); b.className = 'page-btn'; b.textContent = 'Next →';
+    b.disabled = current >= total; b.onclick = () => fn(current+1); p.appendChild(b);
+  }
+
+  async function openUserModal(userId, name, status) {
+    editingUserId = userId;
+    document.getElementById('user-modal-title').textContent = `Edit: ${name}`;
+    document.getElementById('user-modal-body').innerHTML = `
+      <div class="form-group">
+        <label class="form-label">Account Status</label>
+        <select class="form-select" id="edit-status">
+          <option value="active" ${status==='active'?'selected':''}>Active</option>
+          <option value="banned" ${status==='banned'?'selected':''}>Banned</option>
+        </select>
+      </div>
+      <hr style="margin:16px 0;border-color:var(--admin-border);">
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;">💰 Balance Adjustment</div>
+      <div class="form-group">
+        <label class="form-label">Amount (+ to credit, - to debit)</label>
+        <input type="number" id="edit-balance" class="form-input" placeholder="e.g. 100 or -50" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Currency</label>
+        <select class="form-select" id="edit-currency">
+          <option value="INR">INR</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Note</label>
+        <input type="text" id="edit-note" class="form-input" placeholder="Reason for adjustment" />
+      </div>
+    `;
+    document.getElementById('user-modal').classList.add('open');
+  }
+
+  function closeUserModal() {
+    document.getElementById('user-modal').classList.remove('open');
+    editingUserId = null;
+  }
+
+  async function saveUser() {
+    if (!editingUserId) return;
+    const status = document.getElementById('edit-status').value;
+    const balanceAdjust = parseFloat(document.getElementById('edit-balance').value) || 0;
+    const balanceCurrency = document.getElementById('edit-currency').value;
+    const balanceNote = document.getElementById('edit-note').value;
+
+    const body = { status };
+    if (balanceAdjust !== 0) { body.balanceAdjust = balanceAdjust; body.balanceCurrency = balanceCurrency; body.balanceNote = balanceNote; }
+
+    const data = await apiCall(`/admin/users/${editingUserId}`, 'PATCH', body);
+    if (data.success) {
+      showToast('User updated!', 'success');
+      closeUserModal();
+      loadUsers();
+    } else {
+      showToast(data.message, 'error');
+    }
+  }
+
+  if (!token) window.location.href = '/login.html';
+  else loadUsers();
+</script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free Mode Control - CoinFlip Admin</title>
+  <link rel="manifest" href="/manifest.json" />
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <link rel="stylesheet" href="/admin/admin.css" />
+  <style>
+    .control-card { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 24px; margin-bottom: 20px; }
+    .control-card h3 { font-size: 16px; margin-bottom: 12px; color: var(--admin-text); }
+    .control-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
+    .control-label { font-size: 14px; color: var(--admin-text); }
+    .control-desc { font-size: 12px; color: var(--admin-text-hint); margin-top: 2px; }
+
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .stat-card { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 16px; text-align: center; }
+    .stat-card .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-text-sec); margin-bottom: 6px; }
+    .stat-card .value { font-size: 22px; font-weight: 700; color: var(--admin-text); }
+    .stat-card.heads-card { border-left: 4px solid #c8941a; }
+    .stat-card.tails-card { border-left: 4px solid #607d8b; }
+
+    .resolve-section { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 24px; margin-bottom: 20px; text-align: center; display: none; }
+    .resolve-section h3 { font-size: 16px; margin-bottom: 16px; color: var(--admin-text); }
+    .resolve-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .resolve-btn { padding: 14px 36px; font-size: 16px; font-weight: 700; border: none; border-radius: var(--admin-radius); cursor: pointer; transition: all 0.2s; color: white; }
+    .resolve-btn.heads { background: linear-gradient(135deg, #c8941a, #8b6508); }
+    .resolve-btn.tails { background: linear-gradient(135deg, #607d8b, #37474f); }
+    .resolve-btn:hover { box-shadow: 0 4px 16px rgba(200,148,26,0.5); transform: translateY(-1px); }
+    .resolve-btn.tails:hover { box-shadow: 0 4px 16px rgba(96,125,139,0.5); transform: translateY(-1px); }
+    .resolve-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .resolve-btn .emoji { font-size: 24px; display: block; margin-bottom: 4px; }
+
+    .pending-list { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); overflow: hidden; display: none; }
+    .pending-list h3 { padding: 16px 20px; font-size: 14px; color: var(--admin-text); border-bottom: 1px solid var(--admin-border); }
+    .pending-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--admin-border); font-size: 13px; }
+    .pending-item:last-child { border-bottom: none; }
+    .pending-item .user-info { color: var(--admin-text); }
+    .pending-item .user-info .name { font-weight: 500; }
+    .pending-item .user-info .email { font-size: 11px; color: var(--admin-text-hint); }
+    .pending-item .bet-info { text-align: right; }
+    .pending-item .bet-info .side { font-size: 14px; font-weight: 600; }
+    .pending-item .bet-info .side.heads { color: #c8941a; }
+    .pending-item .bet-info .side.tails { color: #607d8b; }
+    .empty-state { padding: 40px; text-align: center; color: var(--admin-text-hint); font-size: 14px; }
+    .empty-state .big { font-size: 40px; display: block; margin-bottom: 12px; }
+    .info-box { background: #fff3e0; border: 1px solid #ffcc80; border-radius: var(--admin-radius); padding: 16px; margin-bottom: 20px; font-size: 13px; color: #e65100; display: none; }
+    .info-box strong { display: block; margin-bottom: 4px; }
+    .badge-pending-time { font-size: 10px; color: var(--admin-text-hint); }
+  </style>
+</head>
+<body>
+<div class="toast-container" id="toast-container"></div>
+
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <a href="/admin/" class="sidebar-logo">
+      <span class="logo-emoji">🪙</span>
+      <span class="logo-text">CoinFlip</span>
+      <span class="admin-badge">Admin</span>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Overview</div>
+      <a href="/admin/" class="sidebar-link" id="nav-dashboard"><span class="icon">📊</span> Dashboard</a>
+      <div class="sidebar-section-label">Management</div>
+      <a href="/admin/users.html" class="sidebar-link" id="nav-users"><span class="icon">👥</span> Users</a>
+      <a href="/admin/transactions.html" class="sidebar-link" id="nav-transactions"><span class="icon">💰</span> Transactions <span class="sidebar-badge" id="pending-badge" style="display:none">0</span></a>
+      <a href="/admin/game-history.html" class="sidebar-link" id="nav-games"><span class="icon">🎮</span> Game History</a>
+      <div class="sidebar-section-label">Configuration</div>
+      <a href="/admin/settings.html" class="sidebar-link" id="nav-settings"><span class="icon">⚙️</span> Settings</a>
+      <a href="/admin/create-admin.html" class="sidebar-link" id="nav-create-admin"><span class="icon">👑</span> Create Admin</a>
+      <a href="/admin/live-control.html" class="sidebar-link" id="nav-live-control"><span class="icon">🎯</span> Session Control</a>
+      <a href="/admin/free-control.html" class="sidebar-link active" id="nav-free-control"><span class="icon">🎮</span> Free Control</a>
+      <a href="/admin/wallet.html" class="sidebar-link" id="nav-wallet"><span class="icon">🏦</span> Platform Wallet</a>
+      <div class="sidebar-section-label">Account</div>
+      <a href="/" class="sidebar-link"><span class="icon">🌐</span> View Site</a>
+      <a href="/admin/change-password.html" class="sidebar-link" id="nav-change-password"><span class="icon">🔑</span> Change Password</a>
+      <a href="#" class="sidebar-link" onclick="adminLogout()"><span class="icon">🚪</span> Sign Out</a>
+    </nav>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="btn btn-outline btn-sm" onclick="toggleSidebar()" style="display:none" id="menu-btn">☰</button>
+        <span class="admin-page-title">🎮 Free Mode Control</span>
+      </div>
+      <div class="admin-topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="loadData()">🔄 Refresh</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleTheme()">🌙</button>
+        <span id="admin-name" style="font-size:14px; color:var(--admin-text-sec);"></span>
+      </div>
+    </header>
+
+    <div class="admin-content">
+      <!-- Toggle -->
+      <div class="control-card">
+        <div class="control-row">
+          <div>
+            <div class="control-label">🎮 Free Mode Manual Control</div>
+            <div class="control-desc">When ON, free flips stay pending until admin declares result. No auto-resolve. No countdown.</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="free-manual-draw-toggle" onchange="toggleFreeManualDraw()" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="info-box" id="info-box">
+        <strong>🔄 Auto-resolve fallback</strong>
+        Agar admin 60 seconds tak result declare nahi karta, user ko apne aap random result mil jayega (connection loss safety).
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" id="stats-section" style="display:none;">
+        <div class="stat-card heads-card">
+          <div class="label">👑 Heads</div>
+          <div class="value" id="heads-count">0</div>
+          <div class="sub" style="font-size:11px;color:var(--admin-text-hint);">users</div>
+        </div>
+        <div class="stat-card tails-card">
+          <div class="label">🦁 Tails</div>
+          <div class="value" id="tails-count">0</div>
+          <div class="sub" style="font-size:11px;color:var(--admin-text-hint);">users</div>
+        </div>
+      </div>
+
+      <!-- Resolve -->
+      <div class="resolve-section" id="resolve-section">
+        <h3>🎯 Declare Result for All Free Flips</h3>
+        <p style="font-size:13px; color:var(--admin-text-sec); margin-bottom:16px;">
+          Sab pending free flips ek hi result se resolve ho jayenge.
+          <br/><span style="color:var(--admin-warning);">💡 60s ke baad user ko auto-random mil jayega agar admin declare na kare.</span>
+        </p>
+        <div class="resolve-btns">
+          <button class="resolve-btn heads" onclick="resolveAll('heads')" id="resolve-heads">
+            <span class="emoji">👑</span> Declare HEADS
+          </button>
+          <button class="resolve-btn tails" onclick="resolveAll('tails')" id="resolve-tails">
+            <span class="emoji">🦁</span> Declare TAILS
+          </button>
+        </div>
+        <div id="resolve-result" style="margin-top: 16px; font-size: 14px; display: none;"></div>
+      </div>
+
+      <!-- Pending List -->
+      <div class="pending-list" id="pending-list">
+        <h3>📋 Pending Free Flips</h3>
+        <div id="pending-list-body">
+          <div class="empty-state"><span class="big">🪙</span>No pending free flips.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  let refreshTimer = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    refreshTimer = setInterval(loadData, 3000);
+  });
+
+  async function loadData() {
+    try {
+      const sRes = await fetch(`${API}/admin/settings`, { headers: { Authorization: `Bearer ${token}` } });
+      if (sRes.status === 401) { window.location.href = '/login.html'; return; }
+      const sData = await sRes.json();
+      const enabled = sData.success && sData.settings.freeManualDraw;
+      document.getElementById('free-manual-draw-toggle').checked = enabled;
+
+      document.getElementById('stats-section').style.display = enabled ? 'grid' : 'none';
+      document.getElementById('resolve-section').style.display = enabled ? 'block' : 'none';
+      document.getElementById('pending-list').style.display = enabled ? 'block' : 'none';
+      document.getElementById('info-box').style.display = enabled ? 'block' : 'none';
+
+      if (enabled) {
+        const fRes = await fetch(`${API}/admin/pending-free-flips`, { headers: { Authorization: `Bearer ${token}` } });
+        if (fRes.status === 401) { window.location.href = '/login.html'; return; }
+        const fData = await fRes.json();
+        if (fData.success) render(fData);
+      }
+    } catch (e) { console.error('loadData failed:', e); }
+  }
+
+  function render(data) {
+    document.getElementById('heads-count').textContent = data.stats.headsCount;
+    document.getElementById('tails-count').textContent = data.stats.tailsCount;
+
+    const headsBtn = document.getElementById('resolve-heads');
+    const tailsBtn = document.getElementById('resolve-tails');
+    headsBtn.disabled = data.pending.length === 0;
+    tailsBtn.disabled = data.pending.length === 0;
+
+    const body = document.getElementById('pending-list-body');
+    if (data.pending.length === 0) {
+      body.innerHTML = '<div class="empty-state"><span class="big">🪙</span>No pending free flips.</div>';
+      return;
+    }
+
+    body.innerHTML = data.pending.map(g => {
+      const elapsed = Math.floor((Date.now() - new Date(g.createdAt).getTime()) / 1000);
+      const timeStr = elapsed < 60 ? `${elapsed}s ago` : `${Math.floor(elapsed/60)}m ago`;
+      const autoSoon = elapsed >= 50 ? '⚠️ ' : '';
+      return `
+        <div class="pending-item">
+          <div class="user-info">
+            <div class="name">${g.userId?.name || 'Unknown'}</div>
+            <div class="email">${g.userId?.email || ''}</div>
+            <div class="badge-pending-time">${autoSoon}${timeStr}${elapsed >= 50 ? ' (auto-resolve soon)' : ''}</div>
+          </div>
+          <div class="bet-info">
+            <div class="side ${g.selectedSide}">${g.selectedSide === 'heads' ? '👑 Heads' : '🦁 Tails'}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function toggleFreeManualDraw() {
+    const enabled = document.getElementById('free-manual-draw-toggle').checked;
+    const btn = document.getElementById('free-manual-draw-toggle');
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${API}/admin/settings`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ freeManualDraw: enabled })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(enabled ? 'Free control enabled' : 'Free control disabled', 'success');
+        loadData();
+      } else { showToast(data.message, 'error'); btn.checked = !enabled; }
+    } catch { showToast('Connection error', 'error'); btn.checked = !enabled; }
+    btn.disabled = false;
+  }
+
+  async function resolveAll(result) {
+    if (!confirm(`Declare ${result.toUpperCase()} for ALL pending free flips?`)) return;
+    const btn = document.getElementById(result === 'heads' ? 'resolve-heads' : 'resolve-tails');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="border-top-color:white;margin:auto;width:18px;height:18px;display:inline-block;"></div> Resolving...';
+    try {
+      const res = await fetch(`${API}/admin/resolve-free-flips`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ result })
+      });
+      const data = await res.json();
+      const box = document.getElementById('resolve-result');
+      if (data.success) {
+        box.style.display = 'block';
+        box.innerHTML = `<span style="color:var(--admin-success)">✅ ${data.message}</span>`;
+        setTimeout(() => { box.style.display = 'none'; }, 3000);
+        loadData();
+      } else { box.style.display = 'block'; box.innerHTML = `<span style="color:var(--admin-danger)">❌ ${data.message}</span>`; }
+    } catch { showToast('Connection error', 'error'); }
+    btn.innerHTML = result === 'heads' ? '<span class="emoji">👑</span> Declare HEADS' : '<span class="emoji">🦁</span> Declare TAILS';
+    btn.disabled = false;
+  }
+
+  checkAdmin();
+</script>
+</body>
+</html>

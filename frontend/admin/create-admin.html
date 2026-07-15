@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Admin - CoinFlip</title>
+  <link rel="manifest" href="/manifest.json" />
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <link rel="stylesheet" href="/admin/admin.css" />
+  <style>
+    .admin-card { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 28px; margin-bottom: 20px; }
+    .admin-card h2 { font-size: 18px; margin-bottom: 20px; color: var(--admin-text); }
+    .admin-card p { font-size: 13px; color: var(--admin-text-sec); margin-bottom: 20px; line-height: 1.6; }
+    .secret-hint { background: rgba(234,67,53,.08); border: 1px solid rgba(234,67,53,.2); border-radius: var(--admin-radius); padding: 12px 16px; font-size: 12px; color: var(--google-red); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+<div class="toast-container" id="toast-container"></div>
+
+<div class="admin-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/admin/" class="sidebar-logo">
+      <span class="logo-emoji">🪙</span>
+      <span class="logo-text">CoinFlip</span>
+      <span class="admin-badge">Admin</span>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Overview</div>
+      <a href="/admin/" class="sidebar-link" id="nav-dashboard">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <div class="sidebar-section-label">Management</div>
+      <a href="/admin/users.html" class="sidebar-link" id="nav-users">
+        <span class="icon">👥</span> Users
+      </a>
+      <a href="/admin/transactions.html" class="sidebar-link" id="nav-transactions">
+        <span class="icon">💰</span> Transactions
+        <span class="sidebar-badge" id="pending-badge" style="display:none">0</span>
+      </a>
+      <a href="/admin/game-history.html" class="sidebar-link" id="nav-games">
+        <span class="icon">🎮</span> Game History
+      </a>
+      <div class="sidebar-section-label">Configuration</div>
+      <a href="/admin/settings.html" class="sidebar-link" id="nav-settings">
+        <span class="icon">⚙️</span> Settings
+      </a>
+      <a href="/admin/create-admin.html" class="sidebar-link active" id="nav-create-admin">
+        <span class="icon">👑</span> Create Admin
+      </a>
+      <a href="/admin/live-control.html" class="sidebar-link" id="nav-live-control">
+        <span class="icon">🎯</span> Session Control
+      </a>
+      <a href="/admin/free-control.html" class="sidebar-link" id="nav-free-control">
+        <span class="icon">🎮</span> Free Control
+      </a>
+      <a href="/admin/wallet.html" class="sidebar-link" id="nav-wallet">
+        <span class="icon">🏦</span> Platform Wallet
+      </a>
+      <div class="sidebar-section-label">Account</div>
+      <a href="/" class="sidebar-link">
+        <span class="icon">🌐</span> View Site
+      </a>
+      <a href="/admin/change-password.html" class="sidebar-link" id="nav-change-password">
+        <span class="icon">🔑</span> Change Password
+      </a>
+      <a href="#" class="sidebar-link" onclick="adminLogout()">
+        <span class="icon">🚪</span> Sign Out
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="btn btn-outline btn-sm" onclick="toggleSidebar()" style="display:none" id="menu-btn">☰</button>
+        <span class="admin-page-title">Create Admin</span>
+      </div>
+      <div class="admin-topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="toggleTheme()">🌙</button>
+        <span id="admin-name" style="font-size:14px; color:var(--admin-text-sec);"></span>
+      </div>
+    </header>
+
+    <div class="admin-content">
+      <div class="admin-card">
+        <h2>👑 Create New Admin</h2>
+        <p>Create an additional admin account or promote an existing user to admin. You need the admin secret key (configured in server .env file).</p>
+
+        <div class="secret-hint">⚠️ Enter the admin secret key from the server .env file.</div>
+
+        <form id="create-admin-form" onsubmit="handleCreateAdmin(event)">
+          <div class="form-group">
+            <label class="form-label" for="name">Name</label>
+            <input type="text" id="name" class="form-input" placeholder="Admin name" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="email">Email</label>
+            <input type="email" id="email" class="form-input" placeholder="admin@example.com" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="phone">Phone</label>
+            <input type="text" id="phone" class="form-input" placeholder="Phone number" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <div class="password-field">
+              <input type="password" id="password" class="form-input" placeholder="Minimum 6 characters" required minlength="6" />
+              <button type="button" class="password-toggle" onclick="togglePassword(this)">👁️</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="secret">Admin Secret Key</label>
+            <div class="password-field">
+              <input type="password" id="secret" class="form-input" placeholder="Enter admin secret key from .env" required />
+              <button type="button" class="password-toggle" onclick="togglePassword(this)">👁️</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="submit-btn" style="padding:12px 28px; font-size:14px; border-radius:var(--admin-radius);">
+            Create Admin
+          </button>
+        </form>
+
+        <div id="result-box" style="display:none; margin-top:20px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  async function handleCreateAdmin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    btn.innerHTML = '<div class="spinner" style="border-top-color:white;margin:auto;width:18px;height:18px;"></div> Creating...';
+    btn.disabled = true;
+
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const phone = document.getElementById('phone').value;
+    const password = document.getElementById('password').value;
+    const secret = document.getElementById('secret').value;
+
+    try {
+      const res = await fetch(`${API}/admin/create-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('cf_token')}` },
+        body: JSON.stringify({ name, email, phone, password, secret })
+      });
+      const data = await res.json();
+      const box = document.getElementById('result-box');
+      box.style.display = 'block';
+
+      if (data.success) {
+        box.innerHTML = `<div style="background:rgba(52,168,83,.1);border:1px solid rgba(52,168,83,.2);border-radius:var(--admin-radius);padding:16px;color:var(--google-green);font-size:14px;">✅ ${data.message}</div>`;
+        document.getElementById('create-admin-form').reset();
+      } else {
+        box.innerHTML = `<div style="background:rgba(234,67,53,.1);border:1px solid rgba(234,67,53,.2);border-radius:var(--admin-radius);padding:16px;color:var(--google-red);font-size:14px;">❌ ${data.message}</div>`;
+      }
+    } catch {
+      showToast('Connection error. Try again.', 'error');
+    } finally {
+      btn.innerHTML = 'Create Admin';
+      btn.disabled = false;
+    }
+  }
+
+  checkAdmin();
+</script>
+</body>
+</html>

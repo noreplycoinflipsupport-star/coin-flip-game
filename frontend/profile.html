@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Profile - CoinFlip</title>
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="/css/style2.css" />
+  <style>
+    .profile-header { text-align: center; padding: 40px 20px 28px; }
+    .profile-avatar-wrap { position: relative; width: 96px; height: 96px; margin: 0 auto 16px; cursor: pointer; }
+    .profile-avatar { width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg,#4285f4,#34a853); color: white; font-size: 36px; font-weight: 700; display: flex; align-items: center; justify-content: center; font-family: 'Google Sans',sans-serif; box-shadow: 0 2px 16px rgba(26,115,232,.3); transition: filter .2s; background-size: cover; background-position: center; }
+    .profile-avatar-wrap:hover .profile-avatar { filter: brightness(.85); }
+    .avatar-overlay { position: absolute; bottom: 0; right: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.15); transition: transform .2s; }
+    .profile-avatar-wrap:hover .avatar-overlay { transform: scale(1.1); }
+    .profile-name { font-size: 24px; font-weight: 600; color: var(--text-primary); font-family: 'Google Sans',sans-serif; margin-bottom: 2px; }
+    .profile-email { font-size: 14px; color: var(--text-secondary); }
+
+    .section-card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 12px; transition: box-shadow .2s; }
+    .section-card:hover { box-shadow: var(--shadow-1); }
+    .section-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .section-title .icon { font-size: 16px; }
+
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat-card { text-align: center; padding: 16px 12px; background: var(--surface-2); border-radius: 10px; }
+    .stat-card .value { font-size: 22px; font-weight: 700; color: var(--text-primary); font-family: 'Google Sans',sans-serif; }
+    .stat-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-hint); margin-top: 4px; }
+
+    .input-row { display: flex; gap: 8px; align-items: center; }
+    .input-row input { flex: 1; }
+    .save-btn { padding: 8px 20px; font-size: 13px; border-radius: 20px; background: var(--google-blue); color: white; border: none; cursor: pointer; white-space: nowrap; font-weight: 500; transition: opacity .2s,box-shadow .2s; }
+    .save-btn:hover:not(:disabled) { opacity: .9; box-shadow: 0 1px 6px rgba(26,115,232,.4); }
+    .save-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .field-row { margin-bottom: 16px; }
+    .field-row:last-child { margin-bottom: 0; }
+    .field-label { font-size: 12px; font-weight: 500; color: var(--text-hint); margin-bottom: 4px; }
+    .field-value { font-size: 15px; color: var(--text-primary); padding: 6px 0; font-weight: 500; }
+
+    .ref-code-box { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+    .ref-code-box .code { font-size: 18px; font-weight: 700; font-family: 'Google Sans',sans-serif; color: var(--text-primary); letter-spacing: 2px; flex: 1; text-align: center; }
+    .ref-code-box .copy-btn { background: var(--surface); border: 1px solid var(--border); font-size: 16px; cursor: pointer; padding: 6px 10px; border-radius: 8px; transition: background .2s; }
+    .ref-code-box .copy-btn:hover { background: var(--surface-2); }
+
+    .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .history-item:last-child { border-bottom: none; }
+    .history-item .game-info { display: flex; align-items: center; gap: 10px; }
+    .history-item .game-result { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+    .history-item .game-result.win { background: rgba(52,168,83,.12); color: var(--google-green); }
+    .history-item .game-result.loss { background: rgba(234,67,53,.12); color: var(--google-red); }
+    .history-item .game-result.pending { background: rgba(251,188,4,.15); color: #b8860b; }
+    .history-item .game-details .side { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+    .history-item .game-details .time { font-size: 11px; color: var(--text-hint); }
+    .history-item .amount { font-size: 14px; font-weight: 600; }
+    .history-empty { text-align: center; padding: 32px 16px; color: var(--text-hint); font-size: 14px; }
+    .history-empty .big { font-size: 36px; display: block; margin-bottom: 8px; }
+
+    .wallet-balance { text-align: center; padding: 4px 0; }
+    .wallet-balance .amount { font-size: 32px; font-weight: 700; color: var(--text-primary); font-family: 'Google Sans',sans-serif; }
+    .wallet-balance .sub { font-size: 12px; color: var(--text-hint); margin-top: 2px; }
+    .wallet-balance .action { display: inline-block; margin-top: 12px; padding: 10px 28px; font-size: 14px; border-radius: 20px; text-decoration: none; background: var(--google-blue); color: white; font-weight: 500; transition: opacity .2s,box-shadow .2s; }
+    .wallet-balance .action:hover { opacity: .9; box-shadow: 0 1px 6px rgba(26,115,232,.4); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="/" class="header-logo">
+      <div class="logo-icon">🪙</div>
+      <span>CoinFlip</span>
+    </a>
+    <div class="header-actions">
+      <button class="btn-icon" id="theme-btn" onclick="toggleTheme()">🌙</button>
+    </div>
+  </header>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <main class="main-container" style="max-width:560px;padding:0 16px 100px;">
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <div class="profile-avatar-wrap" onclick="document.getElementById('avatar-input').click();" title="Change profile photo">
+        <div class="profile-avatar" id="profile-avatar">U</div>
+        <div class="avatar-overlay">📷</div>
+      </div>
+      <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="handleAvatarUpload(event)" />
+      <div class="profile-name" id="profile-name">User</div>
+      <div class="profile-email" id="profile-email">user@example.com</div>
+    </div>
+
+    <!-- Wallet -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">💰</span> Wallet</div>
+      <div class="wallet-balance">
+        <div class="amount" id="profile-balance">₹0</div>
+        <div class="sub">Available Balance</div>
+        <a href="/wallet.html" class="action">Manage Wallet</a>
+      </div>
+    </div>
+
+    <!-- Personal Info -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">👤</span> Personal Info</div>
+      <div class="field-row">
+        <div class="field-label">Name</div>
+        <div class="input-row">
+          <input type="text" class="form-input" id="input-name" style="flex:1;padding:8px 12px;font-size:14px;border-radius:8px;" />
+          <button class="save-btn" id="save-name" onclick="saveName()">Save</button>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">Email</div>
+        <div class="field-value" id="display-email">user@example.com</div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">Phone</div>
+        <div class="input-row">
+          <input type="tel" class="form-input" id="input-phone" style="flex:1;padding:8px 12px;font-size:14px;border-radius:8px;" />
+          <button class="save-btn" id="save-phone" onclick="savePhone()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">📊</span> Game Stats</div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="value" id="stat-games">0</div><div class="label">Games</div></div>
+        <div class="stat-card"><div class="value" id="stat-wins">0</div><div class="label">Wins</div></div>
+        <div class="stat-card"><div class="value" id="stat-losses">0</div><div class="label">Losses</div></div>
+        <div class="stat-card"><div class="value" id="stat-rate">0%</div><div class="label">Win Rate</div></div>
+      </div>
+    </div>
+
+    <!-- Security -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">🔒</span> Security</div>
+      <div class="field-row">
+        <div class="field-label">Current Password</div>
+        <div class="password-field" style="position:relative;">
+          <input type="password" class="form-input" id="input-current-password" placeholder="Current password" style="padding-right:44px;border-radius:8px;" />
+          <button type="button" class="password-toggle" onclick="togglePassword(this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:4px;color:var(--text-hint);line-height:1;">👁️</button>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-label">New Password</div>
+        <div class="password-field" style="position:relative;">
+          <input type="password" class="form-input" id="input-new-password" placeholder="New password (min 6 chars)" style="padding-right:44px;border-radius:8px;" />
+          <button type="button" class="password-toggle" onclick="togglePassword(this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:4px;color:var(--text-hint);line-height:1;">👁️</button>
+        </div>
+      </div>
+      <button class="btn btn-primary w-full" onclick="changePassword()" id="change-password-btn" style="padding:10px;font-size:14px;border-radius:20px;margin-top:4px;">Change Password</button>
+    </div>
+
+    <!-- Referral -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">🔗</span> Referral Code</div>
+      <div class="ref-code-box">
+        <span class="code" id="ref-code">------</span>
+        <button class="copy-btn" onclick="copyRefCode()" title="Copy">📋</button>
+        <button class="copy-btn" onclick="shareRef()" title="Share">📤</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="value" id="ref-total">0</div><div class="label">Referred</div></div>
+        <div class="stat-card"><div class="value" id="ref-earnings">₹0</div><div class="label">Earnings</div></div>
+      </div>
+    </div>
+
+    <!-- Game History -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">🎮</span> Recent Games</div>
+      <div id="history-list">
+        <div class="history-empty"><span class="big">🪙</span>No games played yet.</div>
+      </div>
+      <button class="btn btn-outline w-full" onclick="loadHistory()" id="refresh-history" style="margin-top:12px;padding:10px;font-size:13px;border-radius:20px;">🔄 Refresh</button>
+    </div>
+
+    <!-- Sign Out -->
+    <div class="section-card" style="text-align:center;border-color:transparent;box-shadow:none;">
+      <button class="btn btn-outline w-full" onclick="logout()" style="padding:12px;font-size:14px;border-radius:20px;color:var(--google-red);border-color:var(--google-red);">🚪 Sign Out</button>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>Sub-powered by Google</p>
+  </footer>
+
+  <nav class="bottom-nav">
+    <div class="bottom-nav-items">
+      <a href="/" class="bottom-nav-item"><span>🪙</span><span>Play</span></a>
+      <a href="/wallet.html" class="bottom-nav-item"><span>💰</span><span>Wallet</span></a>
+      <a href="/referral.html" class="bottom-nav-item"><span>🔗</span><span>Referral</span></a>
+      <a href="/profile.html" class="bottom-nav-item active"><span>👤</span><span>Profile</span></a>
+    </div>
+  </nav>
+
+  <script>
+    const API = '/api';
+    let userData = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      applyTheme();
+      const token = localStorage.getItem('cf_token');
+      if (!token) { window.location.href = '/login.html'; return; }
+      try {
+        const res = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        if (!data.success) { window.location.href = '/login.html'; return; }
+        userData = data.user;
+        renderProfile();
+        loadBalance();
+        loadStats();
+        loadRefData();
+        loadHistory();
+      } catch { window.location.href = '/login.html'; }
+    });
+
+    function renderProfile() {
+      const u = userData;
+      document.getElementById('profile-name').textContent = u.name || 'User';
+      document.getElementById('profile-email').textContent = u.email || '';
+      document.getElementById('input-name').value = u.name || '';
+      document.getElementById('display-email').textContent = u.email || '';
+      document.getElementById('input-phone').value = u.phone || '';
+      loadAvatar();
+    }
+
+    function loadAvatar() {
+      const saved = localStorage.getItem('cf_avatar');
+      const el = document.getElementById('profile-avatar');
+      if (saved) {
+        el.style.backgroundImage = `url('${saved}')`;
+        el.textContent = '';
+      } else {
+        el.style.backgroundImage = '';
+        el.textContent = (userData?.name || 'U')[0].toUpperCase();
+      }
+    }
+
+    function handleAvatarUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) { showToast('Image too large (max 2MB)', 'error'); return; }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        localStorage.setItem('cf_avatar', ev.target.result);
+        loadAvatar();
+        showToast('Profile photo updated', 'success');
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    }
+
+    async function saveName() {
+      const btn = document.getElementById('save-name');
+      btn.disabled = true; btn.textContent = '...';
+      const name = document.getElementById('input-name').value.trim();
+      if (!name) { showToast('Name cannot be empty', 'error'); btn.disabled = false; btn.textContent = 'Save'; return; }
+      try {
+        const data = await apiCall('/auth/profile', 'PATCH', { name });
+        if (data.success) { userData.name = name; renderProfile(); showToast('Name updated', 'success'); }
+        else { showToast(data.message, 'error'); }
+      } catch { showToast('Connection error', 'error'); }
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+
+    async function savePhone() {
+      const btn = document.getElementById('save-phone');
+      btn.disabled = true; btn.textContent = '...';
+      const phone = document.getElementById('input-phone').value.trim();
+      try {
+        const data = await apiCall('/auth/profile', 'PATCH', { phone });
+        if (data.success) { showToast('Phone updated', 'success'); } else { showToast(data.message, 'error'); }
+      } catch { showToast('Connection error', 'error'); }
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+
+    async function changePassword() {
+      const cur = document.getElementById('input-current-password').value;
+      const nw = document.getElementById('input-new-password').value;
+      if (!cur || !nw) { showToast('Fill both fields', 'error'); return; }
+      if (nw.length < 6) { showToast('New password must be at least 6 characters', 'error'); return; }
+      const btn = document.getElementById('change-password-btn');
+      btn.disabled = true; btn.innerHTML = '<div class="spinner" style="border-top-color:white;margin:auto;"></div>';
+      try {
+        const data = await apiCall('/auth/change-password', 'POST', { currentPassword: cur, newPassword: nw });
+        if (data.success) { showToast('Password changed successfully', 'success'); document.getElementById('input-current-password').value = ''; document.getElementById('input-new-password').value = ''; }
+        else { showToast(data.message, 'error'); }
+      } catch { showToast('Connection error', 'error'); }
+      btn.disabled = false; btn.innerHTML = 'Change Password';
+    }
+
+    async function loadBalance() {
+      try {
+        const data = await apiCall('/wallet/balance');
+        if (data.success) { document.getElementById('profile-balance').textContent = '₹' + (data.balance || 0).toFixed(0); }
+      } catch (e) { console.error('loadBalance failed:', e); }
+    }
+
+    async function loadStats() {
+      try {
+        const data = await apiCall('/game/stats');
+        if (data.success) {
+          document.getElementById('stat-games').textContent = data.stats.totalGames;
+          document.getElementById('stat-wins').textContent = data.stats.totalWins;
+          document.getElementById('stat-losses').textContent = data.stats.totalLosses;
+          document.getElementById('stat-rate').textContent = data.stats.winRate + '%';
+        }
+      } catch (e) { console.error('loadStats failed:', e); }
+    }
+
+    async function loadRefData() {
+      try {
+        const codeData = await apiCall('/referral/my-code');
+        if (codeData.success) { document.getElementById('ref-code').textContent = codeData.referralCode || '------'; }
+        const statsData = await apiCall('/referral/stats');
+        if (statsData.success) {
+          document.getElementById('ref-total').textContent = statsData.totalReferred || 0;
+          document.getElementById('ref-earnings').textContent = '₹' + (statsData.totalEarnings || 0).toFixed(0);
+        }
+      } catch (e) { console.error('loadRefData failed:', e); }
+    }
+
+    async function loadHistory() {
+      try {
+        const data = await apiCall('/game/history?limit=10');
+        const list = document.getElementById('history-list');
+        if (!data.success || !data.history || data.history.length === 0) {
+          list.innerHTML = '<div class="history-empty"><span class="big">🪙</span>No games played yet.</div>'; return;
+        }
+        list.innerHTML = data.history.map(g => {
+          const done = g.status === 'completed' || g.result;
+          const won = done && g.result === g.selectedSide;
+          const lost = done && g.result !== g.selectedSide;
+          const cls = won ? 'win' : lost ? 'loss' : 'pending';
+          const icon = g.selectedSide === 'heads' ? '👑' : '🦁';
+          const time = g.createdAt ? new Date(g.createdAt).toLocaleDateString() : '';
+          const modeLabel = g.mode === 'free' ? '🎮' : '💎';
+          const label = !done ? '?' : won ? 'W' : 'L';
+          return `<div class="history-item"><div class="game-info"><div class="game-result ${cls}">${label}</div><div class="game-details"><div class="side">${modeLabel} ${icon} ${g.selectedSide}</div><div class="time">${time}</div></div></div><div class="amount">₹${g.betAmount}</div></div>`;
+        }).join('');
+      } catch { document.getElementById('history-list').innerHTML = '<div class="history-empty"><span class="big">⚠️</span>Could not load history.</div>'; }
+    }
+
+    function copyRefCode() {
+      const code = document.getElementById('ref-code').textContent;
+      if (code && code !== '------') { navigator.clipboard.writeText(code).then(() => showToast('Referral code copied!', 'success')); }
+    }
+
+    function shareRef() {
+      const code = document.getElementById('ref-code').textContent;
+      const link = `${window.location.origin}/register.html?ref=${code}`;
+      if (navigator.share) { navigator.share({ title: 'Join CoinFlip!', text: `Use my code ${code} to join!`, url: link }); }
+      else { navigator.clipboard.writeText(link).then(() => showToast('Referral link copied!', 'success')); }
+    }
+
+    function apiCall(endpoint, method = 'GET', body = null) {
+      const token = localStorage.getItem('cf_token');
+      const opts = { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } };
+      if (body) opts.body = JSON.stringify(body);
+      return fetch(`${API}${endpoint}`, opts).then(r => r.json());
+    }
+
+    function showToast(message, type = '') {
+      const c = document.getElementById('toast-container'); if (!c) return;
+      const t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = message;
+      c.appendChild(t); setTimeout(() => { t.style.animation = 'toastOut 0.3s ease forwards'; setTimeout(() => t.remove(), 300); }, 3000);
+    }
+
+    function toggleTheme() {
+      const h = document.documentElement;
+      const d = h.getAttribute('data-theme') === 'dark';
+      h.setAttribute('data-theme', d ? 'light' : 'dark');
+      localStorage.setItem('cf_theme', d ? 'light' : 'dark');
+      document.getElementById('theme-btn').textContent = d ? '🌙' : '☀️';
+    }
+
+    function applyTheme() {
+      const saved = localStorage.getItem('cf_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', saved);
+      document.getElementById('theme-btn').textContent = saved === 'dark' ? '☀️' : '🌙';
+    }
+
+    function togglePassword(btn) {
+      const input = btn.parentElement.querySelector('input');
+      const type = input.getAttribute('type');
+      input.setAttribute('type', type === 'password' ? 'text' : 'password');
+      btn.textContent = type === 'password' ? '🙈' : '👁️';
+    }
+
+    function logout() {
+      localStorage.removeItem('cf_token');
+      window.location.href = '/login.html';
+    }
+  </script>
+</body>
+</html>

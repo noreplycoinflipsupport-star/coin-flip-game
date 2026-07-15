@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game History - Admin CoinFlip</title>
+  <link rel="manifest" href="/manifest.json" />
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="toast-container" id="toast-container"></div>
+
+<div class="admin-layout">
+  <aside class="sidebar">
+    <a href="/admin/" class="sidebar-logo">
+      <span class="logo-emoji">🪙</span>
+      <span class="logo-text">CoinFlip</span>
+      <span class="admin-badge">Admin</span>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Overview</div>
+      <a href="/admin/" class="sidebar-link"><span class="icon">📊</span> Dashboard</a>
+      <div class="sidebar-section-label">Management</div>
+      <a href="/admin/users.html" class="sidebar-link"><span class="icon">👥</span> Users</a>
+      <a href="/admin/transactions.html" class="sidebar-link"><span class="icon">💰</span> Transactions</a>
+      <a href="/admin/game-history.html" class="sidebar-link active"><span class="icon">🎮</span> Game History</a>
+      <div class="sidebar-section-label">Configuration</div>
+      <a href="/admin/settings.html" class="sidebar-link"><span class="icon">⚙️</span> Settings</a>
+      <a href="/admin/create-admin.html" class="sidebar-link"><span class="icon">👑</span> Create Admin</a>
+      <a href="/admin/live-control.html" class="sidebar-link"><span class="icon">🎯</span> Session Control</a>
+      <a href="/admin/free-control.html" class="sidebar-link"><span class="icon">🎮</span> Free Control</a>
+      <a href="/admin/wallet.html" class="sidebar-link"><span class="icon">🏦</span> Platform Wallet</a>
+      <div class="sidebar-section-label">Account</div>
+      <a href="/" class="sidebar-link"><span class="icon">🌐</span> View Site</a>
+      <a href="/admin/change-password.html" class="sidebar-link"><span class="icon">🔑</span> Change Password</a>
+      <a href="#" class="sidebar-link" onclick="localStorage.removeItem('cf_token');window.location.href='/login.html'"><span class="icon">🚪</span> Sign Out</a>
+    </nav>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <span class="admin-page-title">Game History Log</span>
+      <button class="btn btn-outline btn-sm" onclick="toggleTheme()">🌙</button>
+    </header>
+
+    <div class="admin-content">
+
+      <!-- History Table -->
+      <div class="data-table-card">
+        <div class="data-table-header">
+          <div class="data-table-title">🎮 All Games Played</div>
+          <div style="font-size:13px; color:var(--admin-text-sec);">
+            Total: <strong id="game-total">0</strong> games
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Mode</th>
+              <th>Selected Side</th>
+              <th>Coin Result</th>
+              <th>Bet Amount</th>
+              <th>Outcome</th>
+              <th>Commission</th>
+              <th>Payout</th>
+              <th>Forced By Admin</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="game-tbody">
+            <tr><td colspan="10" style="text-align:center;padding:20px;">Loading...</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="game-pagination"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  let currentPage = 1;
+
+  async function loadGameHistory(page = 1) {
+    currentPage = page;
+    const url = `/admin/game-history?page=${page}&limit=20`;
+    const data = await apiCall(url);
+    if (!data.success) return;
+
+    document.getElementById('game-total').textContent = data.total;
+    const tbody = document.getElementById('game-tbody');
+    tbody.innerHTML = '';
+
+    if (data.history.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--admin-text-sec);">No games played yet</td></tr>';
+      return;
+    }
+
+    data.history.forEach(g => {
+      const sym = g.currency === 'USD' ? '$' : g.currency === 'EUR' ? '€' : '₹';
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>
+          <div style="font-weight:500">${g.userId?.name || 'Unknown'}</div>
+          <div style="font-size:11px;color:var(--admin-text-sec)">${g.userId?.email || ''}</div>
+        </td>
+        <td><span class="badge badge-${g.mode === 'real' ? 'approved' : 'free'}">${g.mode}</span></td>
+        <td>${g.selectedSide === 'heads' ? '👑 Heads' : '🦁 Tails'}</td>
+        <td>${g.result === 'heads' ? '👑 Heads' : '🦁 Tails'}</td>
+        <td style="font-weight:600">${g.mode === 'real' ? `${sym}${g.betAmount.toFixed(2)}` : 'Free'}</td>
+        <td><span class="badge badge-${g.outcome}">${g.outcome === 'win' ? '✅ Win' : g.outcome === 'loss' ? '❌ Loss' : '🎮 Free'}</span></td>
+        <td>${g.mode === 'real' ? `${sym}${g.commission.toFixed(2)}` : '—'}</td>
+        <td style="font-weight:600" class="${g.outcome === 'win' ? 'text-success' : ''}">${g.mode === 'real' ? `${sym}${(g.netPayout).toFixed(2)}` : '—'}</td>
+        <td>${g.adminForced ? '⚠️ Yes' : 'No'}</td>
+        <td style="font-size:12px">${new Date(g.createdAt).toLocaleString()}</td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    renderPagination(page, data.pages);
+  }
+
+  function renderPagination(current, total) {
+    const p = document.getElementById('game-pagination');
+    p.innerHTML = '';
+    if (total <= 1) return;
+    const prev = document.createElement('button');
+    prev.className = 'page-btn'; prev.textContent = '← Prev'; prev.disabled = current <= 1;
+    prev.onclick = () => loadGameHistory(current - 1);
+    p.appendChild(prev);
+    for (let i = Math.max(1, current-2); i <= Math.min(total, current+2); i++) {
+      const btn = document.createElement('button');
+      btn.className = `page-btn ${i === current ? 'active' : ''}`;
+      btn.textContent = i; btn.onclick = () => loadGameHistory(i);
+      p.appendChild(btn);
+    }
+    const next = document.createElement('button');
+    next.className = 'page-btn'; next.textContent = 'Next →'; next.disabled = current >= total;
+    next.onclick = () => loadGameHistory(current + 1);
+    p.appendChild(next);
+  }
+
+  if (!token) window.location.href = '/login.html';
+  else loadGameHistory();
+</script>
+</body>
+</html>

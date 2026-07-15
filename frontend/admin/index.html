@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - CoinFlip</title>
+  <link rel="manifest" href="/manifest.json" />
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+<div class="toast-container" id="toast-container"></div>
+
+<div class="admin-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/admin/" class="sidebar-logo">
+      <span class="logo-emoji">🪙</span>
+      <span class="logo-text">CoinFlip</span>
+      <span class="admin-badge">Admin</span>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Overview</div>
+      <a href="/admin/" class="sidebar-link active" id="nav-dashboard">
+        <span class="icon">📊</span> Dashboard
+      </a>
+
+      <div class="sidebar-section-label">Management</div>
+      <a href="/admin/users.html" class="sidebar-link" id="nav-users">
+        <span class="icon">👥</span> Users
+      </a>
+      <a href="/admin/transactions.html" class="sidebar-link" id="nav-transactions">
+        <span class="icon">💰</span> Transactions
+        <span class="sidebar-badge" id="pending-badge" style="display:none">0</span>
+      </a>
+      <a href="/admin/game-history.html" class="sidebar-link" id="nav-games">
+        <span class="icon">🎮</span> Game History
+      </a>
+
+      <div class="sidebar-section-label">Configuration</div>
+      <a href="/admin/settings.html" class="sidebar-link" id="nav-settings">
+        <span class="icon">⚙️</span> Settings
+      </a>
+
+      <a href="/admin/create-admin.html" class="sidebar-link" id="nav-create-admin">
+        <span class="icon">👑</span> Create Admin
+      </a>
+      <a href="/admin/live-control.html" class="sidebar-link" id="nav-live-control">
+        <span class="icon">🎯</span> Session Control
+      </a>
+      <a href="/admin/free-control.html" class="sidebar-link" id="nav-free-control">
+        <span class="icon">🎮</span> Free Control
+      </a>
+      <a href="/admin/wallet.html" class="sidebar-link" id="nav-wallet">
+        <span class="icon">🏦</span> Platform Wallet
+      </a>
+
+      <div class="sidebar-section-label">Account</div>
+      <a href="/" class="sidebar-link">
+        <span class="icon">🌐</span> View Site
+      </a>
+      <a href="/admin/change-password.html" class="sidebar-link" id="nav-change-password">
+        <span class="icon">🔑</span> Change Password
+      </a>
+      <a href="#" class="sidebar-link" onclick="adminLogout()">
+        <span class="icon">🚪</span> Sign Out
+      </a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="btn btn-outline btn-sm" onclick="toggleSidebar()" style="display:none" id="menu-btn">☰</button>
+        <span class="admin-page-title">Dashboard</span>
+      </div>
+      <div class="admin-topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="toggleTheme()">🌙</button>
+        <span id="admin-name" style="font-size:14px; color:var(--admin-text-sec);">Admin</span>
+      </div>
+    </header>
+
+    <div class="admin-content">
+
+      <!-- STAT CARDS -->
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-card-icon">👥</div>
+          <div class="stat-card-value" id="s-users">-</div>
+          <div class="stat-card-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">🎮</div>
+          <div class="stat-card-value" id="s-games">-</div>
+          <div class="stat-card-label">Total Games</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">📅</div>
+          <div class="stat-card-value" id="s-today">-</div>
+          <div class="stat-card-label">Today's Games</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">💵</div>
+          <div class="stat-card-value" id="s-deposits">-</div>
+          <div class="stat-card-label">Total Deposits</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">💸</div>
+          <div class="stat-card-value" id="s-withdrawals">-</div>
+          <div class="stat-card-label">Total Withdrawals</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">💹</div>
+          <div class="stat-card-value text-success" id="s-revenue">-</div>
+          <div class="stat-card-label">House Revenue</div>
+        </div>
+        <div class="stat-card" style="border: 2px solid var(--admin-primary);">
+          <div class="stat-card-icon">🏦</div>
+          <div class="stat-card-value" id="s-platform">-</div>
+          <div class="stat-card-label">Platform Wallet</div>
+        </div>
+        <div class="stat-card" style="border: 2px solid #fbbf24;">
+          <div class="stat-card-icon">⬇️</div>
+          <div class="stat-card-value text-danger" id="s-pending-dep">-</div>
+          <div class="stat-card-label">Pending Deposits</div>
+        </div>
+        <div class="stat-card" style="border: 2px solid #fbbf24;">
+          <div class="stat-card-icon">⬆️</div>
+          <div class="stat-card-value text-danger" id="s-pending-with">-</div>
+          <div class="stat-card-label">Pending Withdrawals</div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="data-table-card">
+        <div class="data-table-header">
+          <div class="data-table-title">Recent Activity</div>
+          <a href="/admin/transactions.html" class="btn btn-outline btn-sm">View All →</a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="activity-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--admin-text-sec);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  async function loadDashboard() {
+    try {
+      const data = await apiCall('/admin/dashboard');
+      if (!data.success) return;
+      const s = data.stats;
+      document.getElementById('s-users').textContent = s.totalUsers;
+      document.getElementById('s-games').textContent = s.totalGames;
+      document.getElementById('s-today').textContent = s.todayGames;
+      document.getElementById('s-deposits').textContent = `₹${s.totalDeposits.toFixed(0)}`;
+      document.getElementById('s-withdrawals').textContent = `₹${s.totalWithdrawals.toFixed(0)}`;
+      document.getElementById('s-revenue').textContent = `₹${s.totalRevenue.toFixed(0)}`;
+      document.getElementById('s-platform').textContent = `₹${(s.platformBalance || 0).toFixed(0)}`;
+      document.getElementById('s-pending-dep').textContent = s.pendingDeposits;
+      document.getElementById('s-pending-with').textContent = s.pendingWithdrawals;
+
+      const total = s.pendingDeposits + s.pendingWithdrawals;
+      if (total > 0) {
+        const badge = document.getElementById('pending-badge');
+        badge.textContent = total;
+        badge.style.display = 'inline';
+      }
+
+      const tbody = document.getElementById('activity-tbody');
+      tbody.innerHTML = '';
+      if (data.recentActivity.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--admin-text-sec);">No activity yet</td></tr>';
+      } else {
+        data.recentActivity.forEach(t => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${t.userId?.name || 'Unknown'}</td>
+            <td>${t.type.replace('_', ' ')}</td>
+            <td>₹${t.amount.toFixed(2)}</td>
+            <td><span class="badge badge-${t.status}">${t.status}</span></td>
+            <td>${new Date(t.createdAt).toLocaleString()}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+    } catch (e) { showToast('Failed to load dashboard', 'error'); }
+  }
+
+  checkAdmin().then(loadDashboard);
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Platform Wallet - CoinFlip Admin</title>
+  <link rel="manifest" href="/manifest.json" />
+  <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
+  <link rel="stylesheet" href="/admin/admin.css" />
+  <style>
+    .wallet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .wallet-card { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 24px; text-align: center; }
+    .wallet-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-text-sec); margin-bottom: 8px; }
+    .wallet-card .value { font-size: 32px; font-weight: 700; color: var(--admin-text); }
+    .wallet-card .sub { font-size: 12px; color: var(--admin-text-hint); margin-top: 4px; }
+    .wallet-card.balance-card { border-left: 4px solid var(--admin-primary); }
+    .wallet-card.earnings-card { border-left: 4px solid var(--admin-success); }
+    .withdraw-card { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 24px; margin-bottom: 20px; }
+    .withdraw-card h3 { font-size: 16px; margin-bottom: 16px; color: var(--admin-text); }
+    .withdraw-history { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); overflow: hidden; }
+    .withdraw-history h3 { padding: 16px 20px; font-size: 14px; color: var(--admin-text); border-bottom: 1px solid var(--admin-border); }
+    .withdraw-table { width: 100%; border-collapse: collapse; }
+    .withdraw-table th { text-align: left; padding: 10px 20px; font-size: 11px; text-transform: uppercase; color: var(--admin-text-sec); border-bottom: 1px solid var(--admin-border); }
+    .withdraw-table td { padding: 10px 20px; font-size: 13px; color: var(--admin-text); border-bottom: 1px solid var(--admin-border); }
+    .withdraw-table tr:last-child td { border-bottom: none; }
+    .empty-state { padding: 40px; text-align: center; color: var(--admin-text-hint); font-size: 14px; }
+  </style>
+</head>
+<body>
+<div class="toast-container" id="toast-container"></div>
+
+<div class="admin-layout">
+  <aside class="sidebar" id="sidebar">
+    <a href="/admin/" class="sidebar-logo">
+      <span class="logo-emoji">🪙</span>
+      <span class="logo-text">CoinFlip</span>
+      <span class="admin-badge">Admin</span>
+    </a>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Overview</div>
+      <a href="/admin/" class="sidebar-link" id="nav-dashboard"><span class="icon">📊</span> Dashboard</a>
+      <div class="sidebar-section-label">Management</div>
+      <a href="/admin/users.html" class="sidebar-link" id="nav-users"><span class="icon">👥</span> Users</a>
+      <a href="/admin/transactions.html" class="sidebar-link" id="nav-transactions"><span class="icon">💰</span> Transactions <span class="sidebar-badge" id="pending-badge" style="display:none">0</span></a>
+      <a href="/admin/game-history.html" class="sidebar-link" id="nav-games"><span class="icon">🎮</span> Game History</a>
+      <div class="sidebar-section-label">Configuration</div>
+      <a href="/admin/settings.html" class="sidebar-link" id="nav-settings"><span class="icon">⚙️</span> Settings</a>
+      <a href="/admin/create-admin.html" class="sidebar-link" id="nav-create-admin"><span class="icon">👑</span> Create Admin</a>
+      <a href="/admin/live-control.html" class="sidebar-link" id="nav-live-control"><span class="icon">🎯</span> Session Control</a>
+      <a href="/admin/free-control.html" class="sidebar-link" id="nav-free-control"><span class="icon">🎮</span> Free Control</a>
+      <a href="/admin/wallet.html" class="sidebar-link active" id="nav-wallet"><span class="icon">🏦</span> Platform Wallet</a>
+      <div class="sidebar-section-label">Account</div>
+      <a href="/" class="sidebar-link"><span class="icon">🌐</span> View Site</a>
+      <a href="/admin/change-password.html" class="sidebar-link" id="nav-change-password"><span class="icon">🔑</span> Change Password</a>
+      <a href="#" class="sidebar-link" onclick="adminLogout()"><span class="icon">🚪</span> Sign Out</a>
+    </nav>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="btn btn-outline btn-sm" onclick="toggleSidebar()" style="display:none" id="menu-btn">☰</button>
+        <span class="admin-page-title">🏦 Platform Wallet</span>
+      </div>
+      <div class="admin-topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="loadData()">🔄 Refresh</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleTheme()">🌙</button>
+        <span id="admin-name" style="font-size:14px; color:var(--admin-text-sec);"></span>
+      </div>
+    </header>
+
+    <div class="admin-content">
+      <div class="wallet-grid">
+        <div class="wallet-card balance-card">
+          <div class="label">🏦 Available Balance</div>
+          <div class="value" id="wallet-balance">₹0</div>
+          <div class="sub">Amount available for withdrawal</div>
+        </div>
+        <div class="wallet-card earnings-card">
+          <div class="label">📈 Total Earnings</div>
+          <div class="value" id="wallet-earnings">₹0</div>
+          <div class="sub">All-time platform revenue</div>
+        </div>
+      </div>
+
+      <div class="withdraw-card">
+        <h3>⬆️ Withdraw Funds</h3>
+        <div class="form-group">
+          <label class="form-label">Amount (₹)</label>
+          <input type="number" id="withdraw-amount" class="form-input" placeholder="Enter amount" min="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment Method</label>
+          <select id="withdraw-method" class="form-select">
+            <option value="UPI">UPI</option>
+            <option value="bank_transfer">Bank Transfer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Details (UPI ID / Account info)</label>
+          <input type="text" id="withdraw-details" class="form-input" placeholder="yourname@upi or Bank A/c details" />
+        </div>
+        <button class="btn btn-primary" onclick="submitWithdraw()" id="withdraw-btn">Withdraw</button>
+      </div>
+
+      <div class="withdraw-history">
+        <h3>📜 Withdrawal History</h3>
+        <table class="withdraw-table" id="history-table" style="display:none">
+          <thead>
+            <tr><th>Date</th><th>Amount</th><th>Method</th><th>Details</th></tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+        <div class="empty-state" id="history-empty">No withdrawals yet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+<script>
+  async function loadData() {
+    try {
+      const res = await fetch(`${API}/admin/platform-wallet`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) render(data);
+    } catch (e) { console.error('loadData failed:', e); }
+  }
+
+  function render(data) {
+    document.getElementById('wallet-balance').textContent = `₹${data.balance.toFixed(2)}`;
+    document.getElementById('wallet-earnings').textContent = `₹${data.totalEarnings.toFixed(2)}`;
+
+    const wds = data.withdrawals || [];
+    const table = document.getElementById('history-table');
+    const body = document.getElementById('history-body');
+    const empty = document.getElementById('history-empty');
+
+    if (wds.length === 0) {
+      table.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+
+    table.style.display = 'table';
+    empty.style.display = 'none';
+    body.innerHTML = wds.map(w => `
+      <tr>
+        <td>${new Date(w.createdAt).toLocaleDateString()}</td>
+        <td>₹${w.amount}</td>
+        <td>${w.paymentMethod}</td>
+        <td>${w.adminNote || '-'}</td>
+      </tr>
+    `).join('');
+  }
+
+  async function submitWithdraw() {
+    const amount = parseFloat(document.getElementById('withdraw-amount').value);
+    const method = document.getElementById('withdraw-method').value;
+    const details = document.getElementById('withdraw-details').value;
+
+    if (!amount || amount <= 0) { showToast('Enter a valid amount', 'error'); return; }
+    if (!details) { showToast('Enter payment details', 'error'); return; }
+    if (!confirm(`Withdraw ₹${amount} to your ${method} account?`)) return;
+
+    const btn = document.getElementById('withdraw-btn');
+    btn.disabled = true; btn.textContent = 'Processing...';
+
+    try {
+      const res = await fetch(`${API}/admin/platform-withdraw`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ amount, method, details })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✅ ${data.message}`, 'success');
+        document.getElementById('withdraw-amount').value = '';
+        document.getElementById('withdraw-details').value = '';
+        loadData();
+      } else {
+        showToast(data.message, 'error');
+      }
+    } catch { showToast('Connection error', 'error'); }
+
+    btn.disabled = false; btn.textContent = 'Withdraw';
+  }
+
+  checkAdmin();
+  checkAdmin().then(loadData);
+</script>
+</body>
+</html>
