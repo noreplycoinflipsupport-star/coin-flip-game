@@ -296,7 +296,15 @@ exports.debug = async (req, res) => {
     const mongoose = require('mongoose');
     const state = mongoose.connection.readyState;
     const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
-    res.json({ mongooseState: states[state] || state, nodeEnv: process.env.NODE_ENV, mongoUri: (process.env.MONGODB_URI || '').replace(/\/\/.*:.*@/, '//USER:PASS@') });
+    const { getLastMongoError } = require('../config/db');
+    res.json({
+      mongooseState: states[state] || state,
+      lastMongoError: getLastMongoError(),
+      nodeEnv: process.env.NODE_ENV,
+      mongoUri: (process.env.MONGODB_URI || '').replace(/\/\/.*:.*@/, '//USER:PASS@'),
+      mongooseVersion: mongoose.version,
+      nodeVersion: process.version
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
