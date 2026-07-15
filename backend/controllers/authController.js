@@ -70,7 +70,7 @@ exports.register = async (req, res) => {
 
     const existing = await User.findOne({ email: email.toLowerCase() });
     if (existing) {
-      return res.status(400).json({ success: false, message: 'Email already registered' });
+      return res.status(400).json({ success: false, message: 'Email already registered', debug: 'dup_email' });
     }
 
     let referredBy = null;
@@ -134,6 +134,7 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password required' });
 
+    console.log('Login attempt for:', email);
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -217,7 +218,7 @@ exports.updateCurrency = async (req, res) => {
     res.json({ success: true, message: 'Currency updated', currency });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: 'Login error: ' + error.message });
   }
 };
 
@@ -286,6 +287,21 @@ exports.resetPassword = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+// @route POST /api/auth/debug
+exports.debug = async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    const state = mongoose.connection.readyState;
+    const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+    const User = require('../models/User');
+    let userCount = 0;
+    try { userCount = await User.countDocuments(); } catch (e) { userCount = 'Error: ' + e.message; }
+    res.json({ mongooseState: states[state] || state, userCount, nodeEnv: process.env.NODE_ENV, mongoUri: (process.env.MONGODB_URI || '').replace(/\/\/.*:.*@/, '//USER:PASS@') });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 };
 
