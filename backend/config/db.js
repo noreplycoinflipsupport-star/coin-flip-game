@@ -3,6 +3,14 @@ const logger = require('../utils/logger');
 
 let lastMongoError = null;
 
+const opts = {
+  serverSelectionTimeoutMS: 45000,
+  connectTimeoutMS: 30000,
+  family: 4,
+  tlsAllowInvalidCertificates: true,
+  tlsAllowInvalidHostnames: true,
+};
+
 function extractCredentials(srvUri) {
   const match = srvUri.match(/^mongodb\+srv:\/\/([^:]+):([^@]+)@/);
   return match ? { user: match[1], pass: match[2] } : null;
@@ -10,20 +18,13 @@ function extractCredentials(srvUri) {
 
 const connectDB = async () => {
   try {
-    let uri = process.env.MONGODB_URI;
+    const uri = process.env.MONGODB_URI;
     if (!uri) {
       logger.error('MONGODB_URI is not set in environment variables');
       lastMongoError = 'MONGODB_URI not set';
       return;
     }
     mongoose.set('bufferCommands', false);
-    const opts = {
-      serverSelectionTimeoutMS: 45000,
-      connectTimeoutMS: 30000,
-      family: 4,
-      tls: true,
-      tlsInsecure: true,
-    };
     logger.info('Connecting to MongoDB...');
     const conn = await mongoose.connect(uri, opts);
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
@@ -41,15 +42,9 @@ async function tryFallback(originalUri) {
   try {
     const creds = extractCredentials(originalUri);
     if (!creds) return;
-    const uri = `mongodb://${creds.user}:${creds.pass}@ac-o5tzf5w-shard-00-00.mfxt7kz.mongodb.net:27017,ac-o5tzf5w-shard-00-01.mfxt7kz.mongodb.net:27017,ac-o5tzf5w-shard-00-02.mfxt7kz.mongodb.net:27017/coinflip?ssl=true&authSource=admin&retryWrites=true&w=majority`;
+    const fallbackUri = `mongodb://${creds.user}:${creds.pass}@ac-o5tzf5w-shard-00-00.mfxt7kz.mongodb.net:27017,ac-o5tzf5w-shard-00-01.mfxt7kz.mongodb.net:27017,ac-o5tzf5w-shard-00-02.mfxt7kz.mongodb.net:27017/coinflip?ssl=true&authSource=admin&retryWrites=true&w=majority`;
     logger.info('Trying fallback direct connection (non-SRV)...');
-    const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 30000,
-      connectTimeoutMS: 30000,
-      family: 4,
-      tls: true,
-      tlsInsecure: true,
-    });
+    const conn = await mongoose.connect(fallbackUri, opts);
     logger.info(`Fallback MongoDB Connected: ${conn.connection.host}`);
     lastMongoError = null;
   } catch (error) {
