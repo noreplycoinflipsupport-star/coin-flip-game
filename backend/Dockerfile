@@ -2,13 +2,15 @@ FROM node:20
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY backend/package*.json ./
 RUN npm install
 
-COPY . .
+COPY backend/ .
+
+COPY frontend/ /frontend/
 
 RUN mkdir -p /app/logs
 
 EXPOSE 5000
 
-CMD ["npx", "pm2-runtime", "start", "ecosystem.config.js"]
+CMD ["node", "server.js"]
