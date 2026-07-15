@@ -9,6 +9,7 @@ const opts = {
   family: 4,
   tlsAllowInvalidCertificates: true,
   tlsAllowInvalidHostnames: true,
+  tlsSecureProtocol: 'TLSv1_2_method',
 };
 
 function extractCredentials(srvUri) {
