@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 const logger = require('../utils/logger');
+const tls = require('tls');
+tls.DEFAULT_MIN_VERSION = 'TLSv1.2';
+tls.DEFAULT_MAX_VERSION = 'TLSv1.2';
 
 let lastMongoError = null;
 
@@ -9,7 +12,6 @@ const opts = {
   family: 4,
   tlsAllowInvalidCertificates: true,
   tlsAllowInvalidHostnames: true,
-  tlsSecureProtocol: 'TLSv1_2_method',
 };
 
 function extractCredentials(srvUri) {
