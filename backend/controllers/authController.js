@@ -326,6 +326,19 @@ exports.debug = async (req, res) => {
         });
       })));
     } catch (e) { shardDns = 'Exception: ' + e.message; }
+    let outboundIp = null;
+    try {
+      const http = require('http');
+      outboundIp = await new Promise((resolve) => {
+        const req = http.get('http://api.ipify.org', { timeout: 5000 }, (res) => {
+          let data = '';
+          res.on('data', chunk => data += chunk);
+          res.on('end', () => resolve(data.trim()));
+        });
+        req.on('error', () => resolve('unknown'));
+        req.setTimeout(5000, () => { req.destroy(); resolve('timeout'); });
+      });
+    } catch (e) { outboundIp = 'error'; }
     let tcpTest = null;
     try {
       const net = require('net');
@@ -389,7 +402,7 @@ exports.debug = async (req, res) => {
       opensslVersion: process.versions.openssl,
       renderIp: process.env.RENDER_EXTERNAL_HOSTNAME || null,
       render: process.env.RENDER || null,
-      outboundIp: null
+      outboundIp: outboundIp
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
