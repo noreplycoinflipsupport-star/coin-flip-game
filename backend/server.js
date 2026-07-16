@@ -19,6 +19,10 @@ if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
 // Connect Database
 connectDB().then(() => {
   require('./config/seed')();
+  const { startSessionTimer, ensureActiveSession } = require('./services/sessionManager');
+  return ensureActiveSession().then(() => {
+    startSessionTimer();
+  });
 });
 
 // Rate Limiting
@@ -161,12 +165,6 @@ app.listen(PORT, () => {
   logger.info(`📡 API: http://localhost:${PORT}/api`);
   logger.info(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
 
-  const { startSessionTimer, ensureActiveSession } = require('./services/sessionManager');
-  ensureActiveSession().then(() => {
-    logger.info('Session system initialized');
-    startSessionTimer();
-    logger.info('Session timer started');
-  });
 });
-
+ 
 module.exports = app;
