@@ -45,10 +45,10 @@ async function tryFallback(originalUri) {
   try {
     const creds = extractCredentials(originalUri);
     if (!creds) return;
-    const ips = ['159.41.243.9', '159.41.243.26', '159.41.243.45'];
-    const fallbackUri = `mongodb://${creds.user}:${creds.pass}@${ips.join(':27017,')}:27017/coinflip?ssl=true&authSource=admin&retryWrites=true&w=majority&appName=coinflip`;
-    logger.info('Trying fallback via IPs directly...');
-    const conn = await mongoose.connect(fallbackUri, { ...opts, servername: 'ac-o5tzf5w-shard-00-00.mfxt7kz.mongodb.net' });
+    const hosts = ['ac-o5tzf5w-shard-00-00.mfxt7kz.mongodb.net', 'ac-o5tzf5w-shard-00-01.mfxt7kz.mongodb.net', 'ac-o5tzf5w-shard-00-02.mfxt7kz.mongodb.net'];
+    const fallbackUri = `mongodb://${creds.user}:${creds.pass}@${hosts.join(':27017,')}:27017/coinflip?ssl=true&authSource=admin&retryWrites=true&w=majority&appName=coinflip`;
+    logger.info('Trying fallback via hostnames...');
+    const conn = await mongoose.connect(fallbackUri, opts);
     logger.info(`Fallback MongoDB Connected: ${conn.connection.host}`);
     lastMongoError = null;
   } catch (error) {
