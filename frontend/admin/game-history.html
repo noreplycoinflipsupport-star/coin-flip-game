@@ -107,8 +107,8 @@
           <div style="font-size:11px;color:var(--admin-text-sec)">${g.userId?.email || ''}</div>
         </td>
         <td><span class="badge badge-${g.mode === 'real' ? 'approved' : 'free'}">${g.mode}</span></td>
-        <td>${g.selectedSide === 'heads' ? '👑 Heads' : '🦁 Tails'}</td>
-        <td>${g.result === 'heads' ? '👑 Heads' : '🦁 Tails'}</td>
+        <td>${g.selectedSide === 'heads' ? '<img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Heads' : '<img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Tails'}</td>
+        <td>${g.result === 'heads' ? '<img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Heads' : '<img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Tails'}</td>
         <td style="font-weight:600">${g.mode === 'real' ? `${sym}${g.betAmount.toFixed(2)}` : 'Free'}</td>
         <td><span class="badge badge-${g.outcome}">${g.outcome === 'win' ? '✅ Win' : g.outcome === 'loss' ? '❌ Loss' : '🎮 Free'}</span></td>
         <td>${g.mode === 'real' ? `${sym}${g.commission.toFixed(2)}` : '—'}</td>

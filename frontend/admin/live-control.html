@@ -135,12 +135,12 @@
       <!-- Stats Grid -->
       <div class="live-grid" id="stats-grid">
         <div class="live-card heads-card">
-          <div class="label">👑 Heads (Real)</div>
+          <div class="label"><img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Heads (Real)</div>
           <div class="value" id="heads-amount">₹0</div>
           <div class="sub" id="heads-count">0 bet(s)</div>
         </div>
         <div class="live-card tails-card">
-          <div class="label">🦁 Tails (Real)</div>
+          <div class="label"><img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Tails (Real)</div>
           <div class="value" id="tails-amount">₹0</div>
           <div class="sub" id="tails-count">0 bet(s)</div>
         </div>
@@ -177,10 +177,10 @@
         </p>
         <div class="control-btns" id="force-btns">
           <button class="control-btn heads" onclick="setResult('heads')" id="set-heads">
-            <span class="emoji">👑</span> Force HEADS
+            <img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Force HEADS
           </button>
           <button class="control-btn tails" onclick="setResult('tails')" id="set-tails">
-            <span class="emoji">🦁</span> Force TAILS
+            <img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Force TAILS
           </button>
           <button class="control-btn auto" onclick="setResult(null)" id="set-auto">
             <span class="emoji">🎲</span> Auto-Random
@@ -326,7 +326,7 @@
           </div>
           <div class="bet-info">
             <div class="amount">₹${g.betAmount}</div>
-            <div class="side ${g.selectedSide}">${g.selectedSide === 'heads' ? '👑 Heads' : '🦁 Tails'}</div>
+            <div class="side ${g.selectedSide}">${g.selectedSide === 'heads' ? '<img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Heads' : '<img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Tails'}</div>
           </div>
         </div>
       `;
@@ -365,8 +365,8 @@
       showToast('Connection error', 'error');
     }
 
-    btn.innerHTML = result === 'heads' ? '<span class="emoji">👑</span> Force HEADS'
-      : result === 'tails' ? '<span class="emoji">🦁</span> Force TAILS'
+    btn.innerHTML = result === 'heads' ? '<img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Force HEADS'
+      : result === 'tails' ? '<img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Force TAILS'
       : '<span class="emoji">🎲</span> Auto-Random';
     btn.disabled = false;
   }

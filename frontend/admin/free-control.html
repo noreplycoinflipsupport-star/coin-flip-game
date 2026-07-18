@@ -117,12 +117,12 @@
       <!-- Stats -->
       <div class="stats-grid" id="stats-section" style="display:none;">
         <div class="stat-card heads-card">
-          <div class="label">👑 Heads</div>
+          <div class="label"><img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Heads</div>
           <div class="value" id="heads-count">0</div>
           <div class="sub" style="font-size:11px;color:var(--admin-text-hint);">users</div>
         </div>
         <div class="stat-card tails-card">
-          <div class="label">🦁 Tails</div>
+          <div class="label"><img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Tails</div>
           <div class="value" id="tails-count">0</div>
           <div class="sub" style="font-size:11px;color:var(--admin-text-hint);">users</div>
         </div>
@@ -137,10 +137,10 @@
         </p>
         <div class="resolve-btns">
           <button class="resolve-btn heads" onclick="resolveAll('heads')" id="resolve-heads">
-            <span class="emoji">👑</span> Declare HEADS
+            <img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Declare HEADS
           </button>
           <button class="resolve-btn tails" onclick="resolveAll('tails')" id="resolve-tails">
-            <span class="emoji">🦁</span> Declare TAILS
+            <img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Declare TAILS
           </button>
         </div>
         <div id="resolve-result" style="margin-top: 16px; font-size: 14px; display: none;"></div>
@@ -215,7 +215,7 @@
             <div class="badge-pending-time">${autoSoon}${timeStr}${elapsed >= 50 ? ' (auto-resolve soon)' : ''}</div>
           </div>
           <div class="bet-info">
-            <div class="side ${g.selectedSide}">${g.selectedSide === 'heads' ? '👑 Heads' : '🦁 Tails'}</div>
+            <div class="side ${g.selectedSide}">${g.selectedSide === 'heads' ? '<img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Heads' : '<img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Tails'}</div>
           </div>
         </div>
       `;
@@ -261,7 +261,7 @@
         loadData();
       } else { box.style.display = 'block'; box.innerHTML = `<span style="color:var(--admin-danger)">❌ ${data.message}</span>`; }
     } catch { showToast('Connection error', 'error'); }
-    btn.innerHTML = result === 'heads' ? '<span class="emoji">👑</span> Declare HEADS' : '<span class="emoji">🦁</span> Declare TAILS';
+    btn.innerHTML = result === 'heads' ? '<img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Declare HEADS' : '<img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Declare TAILS';
     btn.disabled = false;
   }
 
