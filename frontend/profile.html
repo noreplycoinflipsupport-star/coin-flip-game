@@ -143,14 +143,14 @@
         <div class="field-label">Current Password</div>
         <div class="password-field" style="position:relative;">
           <input type="password" class="form-input" id="input-current-password" placeholder="Current password" style="padding-right:44px;border-radius:8px;" />
-          <button type="button" class="password-toggle" onclick="togglePassword(this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;color:var(--text-hint);line-height:1;">👁️</button>
+          <button type="button" class="password-toggle" onclick="togglePassword(this)"><span class="eye-open">👁️</span><span class="eye-closed hidden">🙈</span></button>
         </div>
       </div>
       <div class="field-row">
         <div class="field-label">New Password</div>
         <div class="password-field" style="position:relative;">
           <input type="password" class="form-input" id="input-new-password" placeholder="New password (min 6 chars)" style="padding-right:44px;border-radius:8px;" />
-          <button type="button" class="password-toggle" onclick="togglePassword(this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;color:var(--text-hint);line-height:1;">👁️</button>
+          <button type="button" class="password-toggle" onclick="togglePassword(this)"><span class="eye-open">👁️</span><span class="eye-closed hidden">🙈</span></button>
         </div>
       </div>
       <button class="btn btn-primary w-full" onclick="changePassword()" id="change-password-btn" style="padding:10px;font-size:14px;border-radius:20px;margin-top:4px;">Change Password</button>
@@ -204,7 +204,7 @@
         <span>Referral</span>
       </a>
       <a href="/profile.html" class="bottom-nav-item active" id="nav-profile">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="12" r="4"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span>Profile</span>
       </a>
     </div>
@@ -399,9 +399,9 @@
 
     function togglePassword(btn) {
       const input = btn.parentElement.querySelector('input');
-      const type = input.getAttribute('type');
-      input.setAttribute('type', type === 'password' ? 'text' : 'password');
-      btn.textContent = type === 'password' ? '🙈' : '👁️';
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.querySelector('.eye-open').classList.toggle('hidden');
+      btn.querySelector('.eye-closed').classList.toggle('hidden');
     }
 
     function logout() {

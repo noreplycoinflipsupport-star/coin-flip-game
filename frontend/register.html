@@ -54,7 +54,7 @@
           <label class="form-label" for="password">Password</label>
           <div class="password-field">
             <input type="password" id="password" class="form-input" placeholder="Min 6 characters" required minlength="6" />
-            <button type="button" class="password-toggle" onclick="togglePassword(this)">👁️</button>
+            <button type="button" class="password-toggle" onclick="togglePassword(this)"><span class="eye-open">👁️</span><span class="eye-closed hidden">🙈</span></button>
           </div>
         </div>
 
@@ -109,6 +109,13 @@
   if (urlRef) document.getElementById('referral').value = urlRef.toUpperCase();
 
   let pendingUserId = null;
+
+  function togglePassword(btn) {
+    const input = btn.parentElement.querySelector('input');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    btn.querySelector('.eye-open').classList.toggle('hidden');
+    btn.querySelector('.eye-closed').classList.toggle('hidden');
+  }
 
   async function handleRegister(e) {
     e.preventDefault();
