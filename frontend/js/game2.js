@@ -343,13 +343,13 @@ function showResult(result, outcome, winAmount, betAmount, mode) {
   if (mode === 'free' || mode === 'free-mode') {
     const isWin = outcome === 'win';
     banner.className = `result-banner show ${isWin ? 'win' : 'loss'}`;
-    icon.innerHTML = resultIcon;
+    icon.textContent = isWin ? '😊' : '😞';
     titleEl.textContent = isWin ? 'You picked right!' : 'Better luck next time!';
     subEl.textContent = result === 'heads' ? 'It\'s Heads!' : 'It\'s Tails!';
   } else {
     const isWin = outcome === 'win';
     banner.className = `result-banner show ${isWin ? 'win' : 'loss'}`;
-    icon.innerHTML = resultIcon;
+    icon.textContent = isWin ? '🎉' : '😞';
     if (isWin) {
       titleEl.textContent = `You Win ${sym}${winAmount.toFixed(2)}!`;
       subEl.textContent = '5% commission applied';

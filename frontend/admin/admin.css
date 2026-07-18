@@ -260,12 +260,12 @@ tbody tr:hover td { background: rgba(26,115,232,.03); }
 .form-input:focus, .form-select:focus { border-color: var(--admin-primary); }
 
 /* Password Toggle */
-.password-field { position: relative; }
-.password-field .form-input { padding: 10px 40px 10px 10px; }
+.password-field { position: relative; width: 100%; }
+.password-field .form-input { padding: 10px 40px 10px 10px; width: 100%; box-sizing: border-box; }
 .password-toggle {
   position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
   background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px;
-  color: #333; line-height: 1; z-index: 1; display: flex; align-items: center; justify-content: center;
+  color: #333; line-height: 0; z-index: 2;
 }
 .password-toggle:hover { color: var(--admin-text-sec); }
 .hidden { display: none !important; }
