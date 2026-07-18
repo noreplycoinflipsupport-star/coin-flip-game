@@ -1505,6 +1505,74 @@ body {
 .password-toggle:hover { color: var(--text-secondary); }
 .hidden { display: none !important; }
 
+/* ===== DRAWER (Hamburger Menu) ===== */
+.drawer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 199;
+}
+.drawer-overlay.open { display: block; }
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  max-width: 80vw;
+  background: var(--surface);
+  z-index: 200;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+}
+.drawer.open { transform: translateX(0); }
+
+.drawer-header {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.drawer-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--google-blue);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.drawer-user-info { min-width: 0; }
+.drawer-name { font-size: 15px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drawer-balance { font-size: 13px; color: var(--text-secondary); }
+.drawer-nav { padding: 8px 0; }
+.drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: background 0.15s;
+  font-weight: 500;
+}
+.drawer-link:hover { background: rgba(26,115,232,0.08); color: var(--google-blue); }
+.drawer-link.active { color: var(--google-blue); }
+.drawer-link span:first-child { font-size: 18px; width: 24px; text-align: center; }
+.drawer-divider { height: 1px; background: var(--border); margin: 8px 16px; }
+
+.drawer-toggle { display: none; }
+
+@media (max-width: 640px) {
+  .header { padding-left: 4px; gap: 2px; }
+  .drawer-toggle { display: inline-flex; }
+}
+
 /* ===== BOTTOM NAV ===== */
 .bottom-nav {
   display: none;

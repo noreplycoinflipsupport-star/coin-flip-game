@@ -57,16 +57,38 @@
 </head>
 <body>
 
-<header class="header">
-  <a href="/" class="header-logo">
-    <div class="logo-icon">🪙</div>
-    <span>CoinFlip</span>
-  </a>
-  <div class="header-actions">
-    <button class="btn-icon" id="theme-btn" onclick="toggleTheme()">🌙</button>
-    <button class="btn btn-outline" onclick="logout()">Sign Out</button>
-  </div>
-</header>
+  <!-- ===== DRAWER ===== -->
+  <aside class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div class="drawer-avatar">🪙</div>
+      <div class="drawer-user-info">
+        <div class="drawer-name" id="drawer-name">Guest</div>
+        <div class="drawer-balance" id="drawer-balance">₹0.00</div>
+      </div>
+    </div>
+    <nav class="drawer-nav">
+      <a href="/" class="drawer-link" id="drawer-home"><span>🎮</span> Play</a>
+      <a href="/wallet.html" class="drawer-link active" id="drawer-wallet"><span>💰</span> Wallet</a>
+      <a href="/referral.html" class="drawer-link" id="drawer-referral"><span>🔗</span> Referral</a>
+      <a href="/profile.html" class="drawer-link" id="drawer-profile"><span>👤</span> Profile</a>
+      <div class="drawer-divider"></div>
+      <a href="/terms.html" class="drawer-link"><span>📄</span> Terms</a>
+      <a href="/privacy.html" class="drawer-link"><span>🔒</span> Privacy</a>
+      <div class="drawer-divider"></div>
+      <a href="#" class="drawer-link" onclick="logout()"><span>🚪</span> Sign Out</a>
+    </nav>
+  </aside>
+  <header class="header">
+    <button class="btn-icon drawer-toggle" onclick="toggleDrawer()" aria-label="Menu">☰</button>
+    <a href="/" class="header-logo">
+      <div class="logo-icon">🪙</div>
+      <span>CoinFlip</span>
+    </a>
+    <div class="header-actions">
+      <button class="btn-icon" id="theme-btn" onclick="toggleTheme()">🌙</button>
+      <button class="btn btn-outline" onclick="logout()">Sign Out</button>
+    </div>
+  </header>
 
 <div class="toast-container" id="toast-container"></div>
 

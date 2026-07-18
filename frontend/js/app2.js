@@ -46,6 +46,8 @@ function updateUI() {
     document.getElementById('balance-chip')?.style.removeProperty('display');
     document.getElementById('currency-selector-wrap')?.style.removeProperty('display');
     document.getElementById('stats-row')?.style.removeProperty('display');
+    var dn = document.getElementById('drawer-name');
+    if (dn) dn.textContent = currentUser.name;
     updateBalanceDisplay();
 
     // Update header profile avatar
@@ -79,10 +81,12 @@ function updateBalanceDisplay() {
   const symbol = CURRENCY_SYMBOLS[currentCurrency];
   const el = document.getElementById('header-balance');
   const sym = document.getElementById('header-currency-symbol');
+  const db = document.getElementById('drawer-balance');
   const gameBalEl = document.getElementById('game-balance');
   const betLabel = document.getElementById('bet-currency-label');
   if (el) el.textContent = bal.toFixed(2);
   if (sym) sym.textContent = symbol;
+  if (db) db.textContent = symbol + bal.toFixed(2);
   if (gameBalEl) gameBalEl.textContent = `${symbol}${bal.toFixed(2)}`;
   if (betLabel) betLabel.textContent = symbol;
   const selCur = document.getElementById('selected-currency');
@@ -254,6 +258,36 @@ async function apiCall(endpoint, method = 'GET', body = null) {
   const res = await fetch(`${API}${endpoint}`, opts);
   return res.json();
 }
+
+// ===== DRAWER (Hamburger Menu) =====
+let drawerOverlay = null;
+
+function getDrawerOverlay() {
+  if (!drawerOverlay) {
+    drawerOverlay = document.createElement('div');
+    drawerOverlay.className = 'drawer-overlay';
+    drawerOverlay.onclick = closeDrawer;
+    document.body.appendChild(drawerOverlay);
+  }
+  return drawerOverlay;
+}
+
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('open');
+  getDrawerOverlay().classList.toggle('open');
+}
+
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  getDrawerOverlay().classList.remove('open');
+}
+
+document.addEventListener('click', function(e) {
+  var link = e.target.closest('.drawer-link');
+  if (link && window.innerWidth <= 640) {
+    closeDrawer();
+  }
+});
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
