@@ -6,7 +6,7 @@
   <title>Platform Wallet - CoinFlip Admin</title>
   <link rel="manifest" href="/manifest.json" />
   <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
-  <link rel="stylesheet" href="/admin/admin.css" />
+  <link rel="stylesheet" href="/admin/admin.css?v=3" />
   <style>
     .wallet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
     .wallet-card { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 24px; text-align: center; }
@@ -117,7 +117,7 @@
   </div>
 </div>
 
-<script src="/admin/admin.js"></script>
+<script src="/admin/admin.js?v=3"></script>
 <script>
   async function loadData() {
     try {
