@@ -56,18 +56,14 @@ function updateUI() {
         profileBtn.style.backgroundImage = `url('${saved}')`;
         profileBtn.style.backgroundSize = 'cover';
         profileBtn.style.backgroundPosition = 'center';
-        profileBtn.textContent = '';
+        const svg = profileBtn.querySelector('svg');
+        if (svg) svg.style.opacity = '0';
       } else {
         profileBtn.style.backgroundImage = '';
-        const init = (currentUser.name || 'U')[0].toUpperCase();
-        profileBtn.textContent = init;
-        profileBtn.style.background = 'var(--google-blue)';
+        const svg = profileBtn.querySelector('svg');
+        if (svg) svg.style.opacity = '1';
       }
     }
-
-    // Update nav profile link
-    const navProfile = document.getElementById('nav-profile');
-    if (navProfile) { navProfile.innerHTML = '<span>👤</span><span>Profile</span>'; }
 
     // Load referral
     const refContent = document.getElementById('referral-content');
