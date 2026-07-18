@@ -1218,6 +1218,21 @@ body {
   font-size: 14px;
 }
 
+.history-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.history-wrap::-webkit-scrollbar {
+  height: 3px;
+}
+
+.history-wrap::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
 .history-table th {
   text-align: left;
   padding: 10px 16px;
@@ -1494,7 +1509,7 @@ body {
   right: 0;
   background: var(--surface);
   border-top: 1px solid var(--border);
-  padding: 6px 0 env(safe-area-inset-bottom, 0px);
+  padding: 6px 0 max(env(safe-area-inset-bottom, 0px), 8px);
   z-index: 90;
   box-shadow: 0 -1px 4px rgba(0,0,0,.05);
 }

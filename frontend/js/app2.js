@@ -242,9 +242,9 @@ async function checkAnnouncement() {
 // ===== PASSWORD TOGGLE =====
 function togglePassword(btn) {
   const input = btn.parentElement.querySelector('input');
-  const type = input.getAttribute('type');
-  input.setAttribute('type', type === 'password' ? 'text' : 'password');
-  btn.textContent = type === 'password' ? '🙈' : '👁️';
+  const isPassword = input.getAttribute('type') === 'password';
+  input.setAttribute('type', isPassword ? 'text' : 'password');
+  btn.textContent = isPassword ? (btn.getAttribute('data-hide') || 'Hide') : (btn.getAttribute('data-show') || 'Show');
 }
 
 // ===== API HELPER =====

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Sign In - CoinFlip</title>
   <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
   <meta name="description" content="Sign in to your CoinFlip account" />
@@ -42,7 +42,7 @@
         <label class="form-label" for="password">Password</label>
         <div class="password-field">
           <input type="password" id="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password" />
-          <button type="button" class="password-toggle" onclick="togglePassword(this)">👁️</button>
+          <button type="button" class="password-toggle" onclick="togglePassword(this)" data-show="Show" data-hide="Hide">Show</button>
         </div>
       </div>
 

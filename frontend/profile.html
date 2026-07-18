@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Profile - CoinFlip</title>
   <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
   <meta name="theme-color" content="#ffffff" />
@@ -143,14 +143,14 @@
         <div class="field-label">Current Password</div>
         <div class="password-field" style="position:relative;">
           <input type="password" class="form-input" id="input-current-password" placeholder="Current password" style="padding-right:44px;border-radius:8px;" />
-          <button type="button" class="password-toggle" onclick="togglePassword(this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:4px;color:var(--text-hint);line-height:1;">👁️</button>
+          <button type="button" class="password-toggle" onclick="togglePassword(this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:12px;padding:6px 10px;color:var(--google-blue);line-height:1;font-family:var(--font-google);font-weight:500;" data-show="Show" data-hide="Hide">Show</button>
         </div>
       </div>
       <div class="field-row">
         <div class="field-label">New Password</div>
         <div class="password-field" style="position:relative;">
           <input type="password" class="form-input" id="input-new-password" placeholder="New password (min 6 chars)" style="padding-right:44px;border-radius:8px;" />
-          <button type="button" class="password-toggle" onclick="togglePassword(this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:4px;color:var(--text-hint);line-height:1;">👁️</button>
+          <button type="button" class="password-toggle" onclick="togglePassword(this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:12px;padding:6px 10px;color:var(--google-blue);line-height:1;font-family:var(--font-google);font-weight:500;" data-show="Show" data-hide="Hide">Show</button>
         </div>
       </div>
       <button class="btn btn-primary w-full" onclick="changePassword()" id="change-password-btn" style="padding:10px;font-size:14px;border-radius:20px;margin-top:4px;">Change Password</button>
@@ -189,12 +189,24 @@
     <p>Sub-powered by Google</p>
   </footer>
 
-  <nav class="bottom-nav">
+  <nav class="bottom-nav" aria-label="Main navigation">
     <div class="bottom-nav-items">
-      <a href="/" class="bottom-nav-item"><span>🪙</span><span>Play</span></a>
-      <a href="/wallet.html" class="bottom-nav-item"><span>💰</span><span>Wallet</span></a>
-      <a href="/referral.html" class="bottom-nav-item"><span>🔗</span><span>Referral</span></a>
-      <a href="/profile.html" class="bottom-nav-item active"><span>👤</span><span>Profile</span></a>
+      <a href="/" class="bottom-nav-item" id="nav-home">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span>Play</span>
+      </a>
+      <a href="/wallet.html" class="bottom-nav-item" id="nav-wallet">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span>Wallet</span>
+      </a>
+      <a href="/referral.html" class="bottom-nav-item" id="nav-referral">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        <span>Referral</span>
+      </a>
+      <a href="/profile.html" class="bottom-nav-item active" id="nav-profile">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="12" r="4"/></svg>
+        <span>Profile</span>
+      </a>
     </div>
   </nav>
 
