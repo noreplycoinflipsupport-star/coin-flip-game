@@ -1,4 +1,4 @@
-const CACHE = 'coinflip-v4';
+const CACHE = 'coinflip-v5';
 const ASSETS = [
   '/',
   '/login.html',

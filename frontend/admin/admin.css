@@ -337,12 +337,26 @@ input:checked + .toggle-slider::before { transform: translateX(20px); }
 .page-btn.active { background: var(--admin-primary); color: white; border-color: var(--admin-primary); }
 .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ===== SIDEBAR OVERLAY ===== */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 99;
+}
+.sidebar-overlay.open { display: block; }
+
+/* Menu button hidden on desktop by default */
+#menu-btn { display: none; }
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
   .admin-main { margin-left: 0; }
   .stat-cards { grid-template-columns: repeat(2, 1fr); }
+  #menu-btn { display: inline-flex; }
 }
 
 .hidden { display: none !important; }

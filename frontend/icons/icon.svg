@@ -10,7 +10,7 @@
       <stop offset="100%" stop-color="#f57f17"/>
     </linearGradient>
   </defs>
-  <rect width="192" height="192" rx="32" fill="url(#bg)"/>
+  <rect width="192" height="192" rx="32" fill="url(#bg)" opacity="0"/>
   <circle cx="96" cy="96" r="56" fill="url(#coin)" stroke="#e65100" stroke-width="3"/>
   <circle cx="96" cy="96" r="46" fill="none" stroke="#fdd835" stroke-width="1.5" opacity="0.6"/>
   <circle cx="96" cy="96" r="36" fill="#fff8e1" opacity="0.15"/>

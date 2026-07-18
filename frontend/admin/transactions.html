@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Transactions - Admin CoinFlip</title>
   <link rel="manifest" href="/manifest.json" />
   <script>if(localStorage.getItem('cf_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')</script>
@@ -12,7 +12,7 @@
 <div class="toast-container" id="toast-container"></div>
 
 <div class="admin-layout">
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <a href="/admin/" class="sidebar-logo">
       <span class="logo-emoji">🪙</span>
       <span class="logo-text">CoinFlip</span>
@@ -40,7 +40,10 @@
 
   <div class="admin-main">
     <header class="admin-topbar">
-      <span class="admin-page-title">Transactions</span>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="btn btn-outline btn-sm" onclick="toggleSidebar()" id="menu-btn">☰</button>
+        <span class="admin-page-title">Transactions</span>
+      </div>
       <div class="admin-topbar-actions">
         <button class="btn btn-outline btn-sm" onclick="toggleTheme()">🌙</button>
       </div>
