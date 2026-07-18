@@ -244,7 +244,7 @@ function togglePassword(btn) {
   const input = btn.parentElement.querySelector('input');
   const isPassword = input.getAttribute('type') === 'password';
   input.setAttribute('type', isPassword ? 'text' : 'password');
-  btn.textContent = isPassword ? (btn.getAttribute('data-hide') || 'Hide') : (btn.getAttribute('data-show') || 'Show');
+  btn.textContent = isPassword ? '🙈' : '👁️';
 }
 
 // ===== API HELPER =====
