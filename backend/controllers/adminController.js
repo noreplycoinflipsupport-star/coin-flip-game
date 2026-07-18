@@ -4,6 +4,7 @@ const GameHistory = require('../models/GameHistory');
 const Settings = require('../models/Settings');
 const GameSession = require('../models/GameSession');
 const sessionManager = require('../services/sessionManager');
+const logger = require('../utils/logger');
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -30,7 +31,7 @@ exports.getDashboard = async (req, res) => {
     ]);
 
     const revenueAgg = await Transaction.aggregate([
-      { $match: { type: 'game_loss', status: 'completed' } },
+      { $match: { type: { $in: ['game_loss', 'game_commission'] }, status: 'completed' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
 
@@ -66,7 +67,7 @@ exports.getDashboard = async (req, res) => {
       recentActivity
     });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -102,7 +103,7 @@ exports.getUsers = async (req, res) => {
 
     res.json({ success: true, users: safeUsers, total, page, pages: Math.ceil(total / limit) });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -124,7 +125,7 @@ exports.getUserDetail = async (req, res) => {
 
     res.json({ success: true, user: safeUser, transactions, gameHistory, referrals });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -157,9 +158,12 @@ exports.updateUser = async (req, res) => {
     }
 
     await user.save();
+
+    logger.info('Admin user update', { adminId: String(req.user._id), targetUserId: String(user._id), changes: Object.keys(req.body) });
+
     res.json({ success: true, message: 'User updated', user });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -189,7 +193,7 @@ exports.getTransactions = async (req, res) => {
 
     res.json({ success: true, transactions, total, page, pages: Math.ceil(total / limit) });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -219,9 +223,11 @@ exports.approveTransaction = async (req, res) => {
     transaction.processedAt = new Date();
     await transaction.save();
 
+    logger.info('Transaction approved', { adminId: String(req.user._id), transactionId: String(transaction._id), type: transaction.type, amount: transaction.amount });
+
     res.json({ success: true, message: 'Transaction approved', transaction });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -247,9 +253,11 @@ exports.rejectTransaction = async (req, res) => {
     transaction.processedAt = new Date();
     await transaction.save();
 
+    logger.info('Transaction rejected', { adminId: String(req.user._id), transactionId: String(transaction._id), type: transaction.type, amount: transaction.amount });
+
     res.json({ success: true, message: 'Transaction rejected', transaction });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -260,7 +268,7 @@ exports.getSettings = async (req, res) => {
     const settings = await Settings.getSettings();
     res.json({ success: true, settings });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -289,11 +297,22 @@ exports.updateSettings = async (req, res) => {
     if (settings.referralCommissionPercent > 100) settings.referralCommissionPercent = 100;
     if (settings.referralCommissionPercent < 0) settings.referralCommissionPercent = 0;
 
+    if (req.body.supportedCurrencies && !Array.isArray(req.body.supportedCurrencies)) {
+      return res.status(400).json({ success: false, message: 'supportedCurrencies must be an array' });
+    }
+
+    if (req.body.defaultCurrency && !settings.supportedCurrencies.includes(req.body.defaultCurrency)) {
+      return res.status(400).json({ success: false, message: 'defaultCurrency must be in supportedCurrencies' });
+    }
+
     settings.updatedAt = new Date();
     await settings.save();
+
+    logger.info('Admin settings updated', { adminId: String(req.user._id), changes: Object.keys(req.body) });
+
     res.json({ success: true, message: 'Settings updated', settings });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -316,7 +335,7 @@ exports.getGameHistory = async (req, res) => {
 
     res.json({ success: true, history, total, page, pages: Math.ceil(total / limit) });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -337,7 +356,7 @@ exports.createAdmin = async (req, res) => {
     const admin = await User.create({ name, email, phone, password, role: 'admin', isEmailVerified: true, status: 'active' });
     res.status(201).json({ success: true, message: 'Admin created', adminId: admin._id });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -373,7 +392,7 @@ exports.getPendingFlips = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -468,7 +487,7 @@ exports.resolveFlips = async (req, res) => {
 
     res.json({ success: true, message: `Resolved ${resolved} flips`, resolved, result });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -489,7 +508,7 @@ exports.getPendingFreeFlips = async (req, res) => {
       stats: { total: pending.length, headsCount, tailsCount }
     });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -528,7 +547,7 @@ exports.resolveFreeFlips = async (req, res) => {
 
     res.json({ success: true, message: `Resolved ${resolved} free flips`, resolved, result });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -587,7 +606,7 @@ exports.getSessionStatus = async (req, res) => {
       stats
     });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -623,7 +642,7 @@ exports.setSessionResult = async (req, res) => {
       sessionId: session.sessionId
     });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -642,7 +661,7 @@ exports.getPlatformWallet = async (req, res) => {
       withdrawals
     });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -676,7 +695,7 @@ exports.platformWithdraw = async (req, res) => {
 
     res.json({ success: true, message: `Withdrawal of ₹${amount} successful`, balance: settings.platformBalance });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -695,7 +714,7 @@ exports.resolveNow = async (req, res) => {
       res.status(409).json({ success: false, message: 'Session is already resolving, try again' });
     }
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -706,7 +725,7 @@ exports.getAutoResolve = async (req, res) => {
     const settings = await Settings.getSettings();
     res.json({ success: true, autoResolve: settings.autoResolve !== false });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -720,7 +739,7 @@ exports.toggleAutoResolve = async (req, res) => {
     await settings.save();
     res.json({ success: true, autoResolve: settings.autoResolve, message: enabled ? 'Auto-resolve ON' : 'Auto-resolve OFF — use Resolve Now manually' });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -731,7 +750,7 @@ exports.getAutoCommission = async (req, res) => {
     const settings = await Settings.getSettings();
     res.json({ success: true, autoCommission: settings.autoCommission === true });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -749,7 +768,7 @@ exports.toggleAutoCommission = async (req, res) => {
       message: enabled ? 'Auto-Commission ON — house always wins' : 'Auto-Commission OFF'
     });
   } catch (error) {
-    console.error(error);
+    logger.error('AdminController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

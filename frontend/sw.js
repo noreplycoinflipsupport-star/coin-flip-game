@@ -1,4 +1,4 @@
-const CACHE = 'coinflip-v2';
+const CACHE = 'coinflip-v4';
 const ASSETS = [
   '/',
   '/login.html',
@@ -8,9 +8,9 @@ const ASSETS = [
   '/referral.html',
   '/forgot-password.html',
   '/reset-password.html',
-  '/css/style2.css?v=2',
-  '/js/app2.js?v=2',
-  '/js/game2.js?v=2',
+  '/css/style2.css?v=3',
+  '/js/app2.js?v=3',
+  '/js/game2.js?v=3',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
 ];

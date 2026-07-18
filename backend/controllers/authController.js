@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
 const { sanitizeInput } = require('../utils/sanitize');
+const logger = require('../utils/logger');
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
 
@@ -22,6 +23,14 @@ function validatePassword(password) {
   }
   if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
     return 'Password must contain at least one special character';
+  }
+  return null;
+}
+
+const PHONE_REGEX = /^[+]?[\d\s\-()]{7,15}$/;
+function validatePhone(phone) {
+  if (!phone || !PHONE_REGEX.test(phone)) {
+    return 'Valid phone number is required';
   }
   return null;
 }
@@ -49,7 +58,7 @@ const sendOTPEmail = async (email, otp, name) => {
       html: `<h2>Hello ${name}!</h2><p>Your OTP is: <strong>${otp}</strong></p><p>Valid for 10 minutes.</p>`
     });
   } catch (err) {
-    console.log('Email send error:', err.message);
+    logger.warn('Email send error', { error: err.message });
   }
 };
 
@@ -61,6 +70,11 @@ exports.register = async (req, res) => {
 
     if (!name || !email || !phone || !password) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    const phoneError = validatePhone(phone);
+    if (phoneError) {
+      return res.status(400).json({ success: false, message: phoneError });
     }
 
     const passwordError = validatePassword(password);
@@ -100,7 +114,7 @@ exports.register = async (req, res) => {
       userId: user._id
     });
   } catch (error) {
-    console.error(error);
+    logger.error('AuthController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -123,7 +137,7 @@ exports.verifyOTP = async (req, res) => {
     const token = generateToken(user._id, user.tokenVersion);
     res.json({ success: true, message: 'Email verified successfully', token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
-    console.error(error);
+    logger.error('AuthController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -134,7 +148,7 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password required' });
 
-    console.log('Login attempt for:', email);
+    logger.debug('Login attempt', { email });
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -170,7 +184,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    logger.error('AuthController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -181,7 +195,7 @@ exports.getMe = async (req, res) => {
     const user = await User.findById(req.user._id);
     res.json({ success: true, user });
   } catch (error) {
-    console.error(error);
+    logger.error('AuthController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -192,13 +206,22 @@ exports.updateProfile = async (req, res) => {
     const sanitized = sanitizeInput(req.body, ['name', 'phone']);
     const { name, phone } = sanitized;
     const updates = {};
-    if (name) updates.name = name;
-    if (phone) updates.phone = phone;
+    if (name) {
+      if (name.length < 2 || name.length > 50) {
+        return res.status(400).json({ success: false, message: 'Name must be 2-50 characters' });
+      }
+      updates.name = name;
+    }
+    if (phone) {
+      const phoneError = validatePhone(phone);
+      if (phoneError) return res.status(400).json({ success: false, message: phoneError });
+      updates.phone = phone;
+    }
 
     const user = await User.findByIdAndUpdate(req.user._id, updates);
     res.json({ success: true, message: 'Profile updated', user });
   } catch (error) {
-    console.error(error);
+    logger.error('AuthController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -217,7 +240,7 @@ exports.updateCurrency = async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, { preferredCurrency: currency });
     res.json({ success: true, message: 'Currency updated', currency });
   } catch (error) {
-    console.error(error);
+    logger.error('AuthController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Login error: ' + error.message });
   }
 };
@@ -236,7 +259,7 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
     await user.save();
 
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password.html?email=${user.email}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password.html?token=${resetToken}`;
 
     try {
       const transporter = nodemailer.createTransport({
@@ -251,12 +274,12 @@ exports.forgotPassword = async (req, res) => {
         html: `<h2>Password Reset</h2><p>Use the token below to reset your password. Valid for 15 minutes.</p><p style="font-size:24px;text-align:center;background:#f5f5f5;padding:12px;letter-spacing:4px;font-family:monospace;"><strong>${resetToken}</strong></p><p>Visit: <a href="${resetUrl}">${resetUrl}</a> and enter the token along with your new password.</p><p>If you didn't request this, ignore this email.</p>`
       });
     } catch (err) {
-      console.log('Email send error:', err.message);
+      logger.warn('Email send error', { error: err.message });
     }
 
     res.json({ success: true, message: 'If the email exists, a reset link has been sent.' });
   } catch (error) {
-    console.error(error);
+    logger.error('AuthController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -285,7 +308,7 @@ exports.resetPassword = async (req, res) => {
 
     res.json({ success: true, message: 'Password reset successful. You can now login with your new password.' });
   } catch (error) {
-    console.error(error);
+    logger.error('AuthController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -316,7 +339,7 @@ exports.changePassword = async (req, res) => {
 
     res.json({ success: true, message: 'Password changed successfully' });
   } catch (error) {
-    console.error(error);
+    logger.error('AuthController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -336,7 +359,7 @@ exports.resendOTP = async (req, res) => {
 
     res.json({ success: true, message: 'OTP resent successfully' });
   } catch (error) {
-    console.error(error);
+    logger.error('AuthController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

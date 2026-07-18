@@ -207,7 +207,7 @@ function copyReferralCode() {
 
 function shareReferral() {
   const code = document.getElementById('referral-code-display')?.textContent;
-  const link = `${window.location.origin}/register.html?ref=${code}`;
+  const link = `/register.html?ref=${code}`;
   if (navigator.share) {
     navigator.share({ title: 'Join CoinFlip!', text: `Use my code ${code} to join and get bonuses!`, url: link });
   } else {

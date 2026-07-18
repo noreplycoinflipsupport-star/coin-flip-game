@@ -26,4 +26,7 @@ gameSessionSchema.statics.getCurrent = async function () {
   return this.findOne({ status: 'betting' });
 };
 
+gameSessionSchema.index({ status: 1 });
+gameSessionSchema.index({ sessionId: 1 });
+
 module.exports = mongoose.model('GameSession', gameSessionSchema);

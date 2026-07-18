@@ -108,4 +108,9 @@ userSchema.statics.atomicAddBalance = async function (userId, currency, amount) 
   return this.findByIdAndUpdate(userId, { $inc: { [`balance.${currency}`]: amount } }, { new: true });
 };
 
+userSchema.index({ role: 1, status: 1 });
+userSchema.index({ phone: 1 });
+userSchema.index({ referredBy: 1 });
+userSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('User', userSchema);

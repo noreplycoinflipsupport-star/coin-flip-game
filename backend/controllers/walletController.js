@@ -1,6 +1,7 @@
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
+const logger = require('../utils/logger');
 
 const WITHDRAWAL_AUTO_EXPIRE_HOURS = 72;
 
@@ -20,10 +21,10 @@ async function autoExpireWithdrawals() {
       await User.atomicAddBalance(t.userId, cur, t.amount);
     }
     if (expired.length > 0) {
-      console.log(`[Auto] ${expired.length} stale withdrawal(s) auto-cancelled`);
+      logger.info(`Auto-cancelled ${expired.length} stale withdrawal(s)`);
     }
   } catch (err) {
-    console.error('[Auto] Withdrawal expiry check error:', err.message);
+    logger.error('Withdrawal expiry check error', { error: err.message });
   }
 }
 
@@ -53,7 +54,7 @@ exports.requestDeposit = async (req, res) => {
       transactionId: transaction._id
     });
   } catch (error) {
-    console.error(error);
+    logger.error('WalletController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -91,7 +92,7 @@ exports.requestWithdrawal = async (req, res) => {
       newBalance: updated.balance[cur]
     });
   } catch (error) {
-    console.error(error);
+    logger.error('WalletController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -116,7 +117,7 @@ exports.getTransactions = async (req, res) => {
 
     res.json({ success: true, transactions, total, page, pages: Math.ceil(total / limit) });
   } catch (error) {
-    console.error(error);
+    logger.error('WalletController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -127,7 +128,7 @@ exports.getBalance = async (req, res) => {
     const user = await User.findById(req.user._id);
     res.json({ success: true, balance: user.balance, preferredCurrency: user.preferredCurrency });
   } catch (error) {
-    console.error(error);
+    logger.error('WalletController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

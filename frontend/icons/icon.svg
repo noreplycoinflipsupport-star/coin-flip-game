@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a73e8"/>
+      <stop offset="100%" stop-color="#0d47a1"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fbc02d"/>
+      <stop offset="50%" stop-color="#f9a825"/>
+      <stop offset="100%" stop-color="#f57f17"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="32" fill="url(#bg)"/>
+  <circle cx="96" cy="96" r="56" fill="url(#coin)" stroke="#e65100" stroke-width="3"/>
+  <circle cx="96" cy="96" r="46" fill="none" stroke="#fdd835" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="96" cy="96" r="36" fill="#fff8e1" opacity="0.15"/>
+  <text x="96" y="85" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="#e65100" text-anchor="middle">COIN</text>
+  <text x="96" y="118" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="#e65100" text-anchor="middle">FLIP</text>
+</svg>

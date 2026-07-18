@@ -11,9 +11,13 @@ const connectDB = async () => {
       lastMongoError = 'MONGODB_URI not set';
       return;
     }
-    mongoose.set('bufferCommands', false);
     logger.info('Connecting to MongoDB...');
-    const conn = await mongoose.connect(uri);
+    const conn = await mongoose.connect(uri, {
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000
+    });
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
     lastMongoError = null;
   } catch (error) {

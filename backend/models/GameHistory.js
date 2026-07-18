@@ -57,4 +57,9 @@ const gameHistorySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+gameHistorySchema.index({ userId: 1, createdAt: -1 });
+gameHistorySchema.index({ status: 1, mode: 1, createdAt: -1 });
+gameHistorySchema.index({ sessionId: 1, status: 1 });
+gameHistorySchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('GameHistory', gameHistorySchema);

@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const logger = require('../utils/logger');
 
 // @route GET /api/referral/my-code
 exports.getMyCode = async (req, res) => {
@@ -13,7 +14,7 @@ exports.getMyCode = async (req, res) => {
       referralEarnings: user.referralEarnings
     });
   } catch (error) {
-    console.error(error);
+    logger.error('ReferralController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -37,7 +38,7 @@ exports.getStats = async (req, res) => {
       recentBonuses: referralTransactions
     });
   } catch (error) {
-    console.error(error);
+    logger.error('ReferralController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -69,7 +70,7 @@ exports.getLeaderboard = async (req, res) => {
 
     res.json({ success: true, leaderboard });
   } catch (error) {
-    console.error(error);
+    logger.error('ReferralController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };

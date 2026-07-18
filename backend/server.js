@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const logger = require('./utils/logger');
 
@@ -18,7 +19,9 @@ if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
 
 // Connect Database
 connectDB().then(() => {
-  require('./config/seed')();
+  if (process.env.NODE_ENV !== 'production') {
+    require('./config/seed')();
+  }
   const { startSessionTimer, ensureActiveSession } = require('./services/sessionManager');
   return ensureActiveSession().then(() => {
     startSessionTimer();
@@ -71,8 +74,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve frontend static files
-app.use(express.static(path.join(__dirname, '../frontend')));
+// Serve frontend static files with cache headers
+app.use(express.static(path.join(__dirname, '../frontend'), {
+  maxAge: '1h',
+  etag: true,
+  lastModified: true
+}));
 
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -81,9 +88,18 @@ app.use('/api/wallet', require('./routes/wallet'));
 app.use('/api/referral', require('./routes/referral'));
 app.use('/api/admin', require('./routes/admin'));
 
-// Health check
+// Health check with DB status
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'CoinFlip API running', time: new Date() });
+  const dbState = mongoose.connection.readyState;
+  const dbStatus = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+  res.json({
+    success: true,
+    message: 'CoinFlip API running',
+    time: new Date(),
+    uptime: process.uptime(),
+    db: dbStatus[dbState] || 'unknown',
+    memory: process.memoryUsage()
+  });
 });
 
 // Public settings — only exposes safe, non-sensitive fields for frontend display
@@ -149,18 +165,20 @@ process.on('uncaughtException', (err) => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
+async function gracefulShutdown(signal) {
+  logger.info(`${signal} received, shutting down gracefully`);
   const { stopSessionTimer } = require('./services/sessionManager');
   stopSessionTimer();
+  try {
+    await mongoose.connection.close();
+    logger.info('MongoDB connection closed');
+  } catch (err) {
+    logger.error('Error closing MongoDB', { error: err.message });
+  }
   process.exit(0);
-});
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  const { stopSessionTimer } = require('./services/sessionManager');
-  stopSessionTimer();
-  process.exit(0);
-});
+}
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

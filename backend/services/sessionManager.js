@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const Settings = require('../models/Settings');
 const logger = require('../utils/logger');
+const { pickSide } = require('../utils/random');
 
 let isResolving = false;
 let timerRef = null;
@@ -18,12 +19,11 @@ async function ensureActiveSession() {
 
 async function createNewSession() {
   const settings = await Settings.getSettings();
-  const all = await GameSession.find({}).sort({ sessionId: -1 });
-  const maxId = all.length > 0 ? all[0].sessionId : 0;
+  const { v4: uuidv4 } = require('uuid');
   const duration = settings.sessionDuration || 10;
 
   return GameSession.create({
-    sessionId: maxId + 1,
+    sessionId: uuidv4().split('-').join('').slice(0, 12).toUpperCase(),
     startTime: new Date(),
     endTime: new Date(Date.now() + duration * 1000),
     status: 'betting'
@@ -53,10 +53,10 @@ async function resolveCurrentSession() {
     }
     if (headsTotal > tailsTotal) result = 'tails';
     else if (tailsTotal > headsTotal) result = 'heads';
-    else result = Math.random() < 0.5 ? 'heads' : 'tails';
+    else result = pickSide();
     isAuto = true;
   } else {
-    result = Math.random() < 0.5 ? 'heads' : 'tails';
+    result = pickSide();
     isAuto = true;
   }
 

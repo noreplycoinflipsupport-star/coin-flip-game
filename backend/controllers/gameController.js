@@ -3,6 +3,8 @@ const GameHistory = require('../models/GameHistory');
 const Transaction = require('../models/Transaction');
 const Settings = require('../models/Settings');
 const GameSession = require('../models/GameSession');
+const { pickSide } = require('../utils/random');
+const logger = require('../utils/logger');
 
 // Per-user rate limiter (1 request per second for free, 1 per 500ms for real)
 const rateMap = new Map();
@@ -13,6 +15,12 @@ function checkRate(userId, minInterval) {
   rateMap.set(String(userId), now);
   return true;
 }
+setInterval(() => {
+  const cutoff = Date.now() - 10000;
+  for (const [key, ts] of rateMap) {
+    if (ts < cutoff) rateMap.delete(key);
+  }
+}, 60000);
 
 // @route POST /api/game/flip
 exports.flip = async (req, res) => {
@@ -50,7 +58,7 @@ exports.flip = async (req, res) => {
         });
       }
 
-      const result = Math.random() < 0.5 ? 'heads' : 'tails';
+      const result = pickSide();
       const outcome = result === selectedSide ? 'win' : 'loss';
 
       if (req.user) {
@@ -138,7 +146,7 @@ exports.flip = async (req, res) => {
       balance: updated.balance[cur], currency: cur
     });
   } catch (error) {
-    console.error(error);
+    logger.error('Flip error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -156,7 +164,7 @@ exports.getPendingStatus = async (req, res) => {
     if (game.status === 'pending' && game.mode === 'free') {
       const sixtySecAgo = new Date(Date.now() - 60000);
       if (new Date(game.createdAt) < sixtySecAgo) {
-        const result = Math.random() < 0.5 ? 'heads' : 'tails';
+        const result = pickSide();
         const outcome = game.selectedSide === result ? 'win' : 'loss';
 
         const user = await User.findById(game.userId);
@@ -177,7 +185,7 @@ exports.getPendingStatus = async (req, res) => {
 
     res.json({ success: true, status: game.status, game });
   } catch (error) {
-    console.error(error);
+    logger.error('GameController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -195,7 +203,7 @@ exports.getHistory = async (req, res) => {
 
     res.json({ success: true, history, total, page, pages: Math.ceil(total / limit) });
   } catch (error) {
-    console.error(error);
+    logger.error('GameController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -223,7 +231,7 @@ exports.checkPending = async (req, res) => {
 
     res.json({ success: true, hasPending: false, game: null });
   } catch (error) {
-    console.error(error);
+    logger.error('GameController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
@@ -261,7 +269,7 @@ exports.getStats = async (req, res) => {
     }
     res.json({ success: true, stats });
   } catch (error) {
-    console.error(error);
+    logger.error('GameController error', { error: error.message });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
