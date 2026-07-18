@@ -204,7 +204,7 @@
         <span>Referral</span>
       </a>
       <a href="/profile.html" class="bottom-nav-item active" id="nav-profile">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="12" r="4"/></svg>
         <span>Profile</span>
       </a>
     </div>
@@ -349,7 +349,7 @@
           const won = done && g.result === g.selectedSide;
           const lost = done && g.result !== g.selectedSide;
           const cls = won ? 'win' : lost ? 'loss' : 'pending';
-          const icon = g.selectedSide === 'heads' ? '👑' : '🦁';
+          const icon = g.selectedSide === 'heads' ? '<img src="/images/crown.png" alt="" style="width:20px;height:20px;display:inline;vertical-align:middle">' : '<img src="/images/lion.png" alt="" style="width:20px;height:20px;display:inline;vertical-align:middle">';
           const time = g.createdAt ? new Date(g.createdAt).toLocaleDateString() : '';
           const modeLabel = g.mode === 'free' ? '🎮' : '💎';
           const label = !done ? '?' : won ? 'W' : 'L';

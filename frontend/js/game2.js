@@ -339,17 +339,17 @@ function showResult(result, outcome, winAmount, betAmount, mode) {
   banner.style.animation = 'none';
   void banner.offsetWidth;
 
-  const resultIcon = result === 'heads' ? '👑' : '🦁';
+  const resultIcon = result === 'heads' ? '<img src=\"/images/crown.png\" alt=\"\" style=\"width:24px;height:24px;display:inline;vertical-align:middle\">' : '<img src=\"/images/lion.png\" alt=\"\" style=\"width:24px;height:24px;display:inline;vertical-align:middle\">';
   if (mode === 'free' || mode === 'free-mode') {
     const isWin = outcome === 'win';
     banner.className = `result-banner show ${isWin ? 'win' : 'loss'}`;
-    icon.textContent = resultIcon;
+    icon.innerHTML = resultIcon;
     titleEl.textContent = isWin ? 'You picked right!' : 'Better luck next time!';
     subEl.textContent = result === 'heads' ? 'It\'s Heads!' : 'It\'s Tails!';
   } else {
     const isWin = outcome === 'win';
     banner.className = `result-banner show ${isWin ? 'win' : 'loss'}`;
-    icon.textContent = resultIcon;
+    icon.innerHTML = resultIcon;
     if (isWin) {
       titleEl.textContent = `You Win ${sym}${winAmount.toFixed(2)}!`;
       subEl.textContent = '5% commission applied';
@@ -399,8 +399,8 @@ function addHistoryRow(result, side, bet, outcome) {
   const outcomeClass = outcome === 'win' ? 'badge-win' : 'badge-loss';
   const outcomeLabel = outcome === 'win' ? '✓ Win' : '✗ Loss';
   row.innerHTML = `
-    <td>${result === 'heads' ? '<span style="font-size:16px">👑</span> Heads' : '<span style="font-size:16px">🦁</span> Tails'}</td>
-    <td>${side === 'heads' ? '<span style="font-size:16px">👑</span> Heads' : '<span style="font-size:16px">🦁</span> Tails'}</td>
+    <td>${result === 'heads' ? '<img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Heads' : '<img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Tails'}</td>
+    <td>${side === 'heads' ? '<img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Heads' : '<img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Tails'}</td>
     <td>${bet > 0 ? `${sym}${bet}` : '<span style="color:var(--text-hint)">Free</span>'}</td>
     <td><span class="badge ${outcomeClass}">${outcomeLabel}</span></td>
     <td style="color:var(--text-hint)">Now</td>
@@ -420,8 +420,8 @@ function addHistoryRowFromData(h) {
   const outcomeLabel = h.outcome === 'win' ? '✓ Win' : h.outcome === 'free' ? 'Free' : '✗ Loss';
   const outcomeBadge = h.outcome === 'win' ? 'badge-win' : h.outcome === 'free' ? 'badge-free' : 'badge-loss';
   row.innerHTML = `
-    <td>${h.result === 'heads' ? '<span style="font-size:16px">👑</span> Heads' : '<span style="font-size:16px">🦁</span> Tails'}</td>
-    <td>${h.selectedSide === 'heads' ? '<span style="font-size:16px">👑</span> Heads' : '<span style="font-size:16px">🦁</span> Tails'}</td>
+    <td>${h.result === 'heads' ? '<img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Heads' : '<img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Tails'}</td>
+    <td>${h.selectedSide === 'heads' ? '<img src="/images/crown.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Heads' : '<img src="/images/lion.png" alt="" style="width:16px;height:16px;display:inline;vertical-align:middle"> Tails'}</td>
     <td>${h.betAmount > 0 ? `${sym}${h.betAmount}` : '<span style="font-size:16px">🆓</span>'}</td>
     <td><span class="badge ${outcomeBadge}">${outcomeLabel}</span></td>
     <td style="color:var(--text-hint)">${new Date(h.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
