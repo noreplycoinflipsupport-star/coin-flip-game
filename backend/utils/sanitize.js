@@ -10,7 +10,8 @@ function escapeHtml(str) {
 
 function sanitizeInput(obj, fields) {
   const sanitized = { ...obj };
-  for (const field of fields) {
+  const targetFields = fields || Object.keys(sanitized);
+  for (const field of targetFields) {
     if (typeof sanitized[field] === 'string') {
       sanitized[field] = sanitized[field].trim().replace(/<[^>]*>/g, '');
     }

@@ -32,7 +32,7 @@ async function createNewSession() {
 
 async function resolveCurrentSession() {
   const session = await GameSession.getCurrent();
-  if (!session) return;
+  if (!session) return false;
 
   const settings = await Settings.getSettings();
   let result;
@@ -133,14 +133,17 @@ async function resolveCurrentSession() {
   session.adminSetResult = adminResult || null;
   session.endTime = new Date();
   await session.save();
+  return true;
 }
 
 async function tick() {
   if (isResolving) return;
   isResolving = true;
   try {
-    await resolveCurrentSession();
-    await createNewSession();
+    const resolved = await resolveCurrentSession();
+    if (resolved) {
+      await createNewSession();
+    }
   } catch (err) {
     logger.error('Session tick error', { error: err.message, stack: err.stack });
   } finally {

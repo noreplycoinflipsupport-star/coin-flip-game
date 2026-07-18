@@ -98,7 +98,11 @@ app.get('/api/settings-public', async (req, res) => {
       maintenanceMessage: settings.maintenanceMessage,
       minBet: settings.minBet,
       maxBet: settings.maxBet,
-      commissionPercent: settings.commissionPercent
+      commissionPercent: settings.commissionPercent,
+      exchangeRates: settings.exchangeRates,
+      supportedCurrencies: settings.supportedCurrencies,
+      defaultCurrency: settings.defaultCurrency,
+      sessionDuration: settings.sessionDuration
     });
   } catch (e) {
     res.status(500).json({ success: false });

@@ -5,8 +5,20 @@ const { protect } = require('../middleware/auth');
 
 router.post('/register', register);
 router.post('/login', login);
-router.post('/verify-otp', verifyOTP);
-router.post('/resend-otp', resendOTP);
+const otpRateMap = new Map();
+function otpRateLimiter(req, res, next) {
+  const key = req.ip || 'unknown';
+  const now = Date.now();
+  const last = otpRateMap.get(key) || 0;
+  if (now - last < 5000) {
+    return res.status(429).json({ success: false, message: 'Too many attempts. Wait 5 seconds.' });
+  }
+  otpRateMap.set(key, now);
+  next();
+}
+
+router.post('/verify-otp', otpRateLimiter, verifyOTP);
+router.post('/resend-otp', otpRateLimiter, resendOTP);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/change-password', protect, changePassword);

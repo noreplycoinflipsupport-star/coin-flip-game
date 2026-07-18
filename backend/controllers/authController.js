@@ -27,8 +27,8 @@ function validatePassword(password) {
 }
 
 // Generate JWT
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+const generateToken = (id, tokenVersion = 0) => {
+  return jwt.sign({ id, tokenVersion }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
 };
 
 // Generate OTP
@@ -120,7 +120,7 @@ exports.verifyOTP = async (req, res) => {
     user.otpExpiry = undefined;
     await user.save();
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.tokenVersion);
     res.json({ success: true, message: 'Email verified successfully', token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
     console.error(error);
@@ -157,7 +157,7 @@ exports.login = async (req, res) => {
     user.lastLogin = Date.now();
     await user.save();
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.tokenVersion);
     res.json({
       success: true,
       emailVerified: true,
@@ -236,7 +236,7 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
     await user.save();
 
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password.html?token=${resetToken}&email=${user.email}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password.html?email=${user.email}`;
 
     try {
       const transporter = nodemailer.createTransport({
@@ -248,7 +248,7 @@ exports.forgotPassword = async (req, res) => {
         from: `"CoinFlip Game" <${process.env.EMAIL_USER}>`,
         to: user.email,
         subject: 'Password Reset - CoinFlip Game',
-        html: `<h2>Password Reset</h2><p>Click the link below to reset your password. Valid for 15 minutes.</p><p><a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#1a73e8;color:white;text-decoration:none;border-radius:6px;">Reset Password</a></p><p>Or copy: ${resetUrl}</p><p>If you didn't request this, ignore this email.</p>`
+        html: `<h2>Password Reset</h2><p>Use the token below to reset your password. Valid for 15 minutes.</p><p style="font-size:24px;text-align:center;background:#f5f5f5;padding:12px;letter-spacing:4px;font-family:monospace;"><strong>${resetToken}</strong></p><p>Visit: <a href="${resetUrl}">${resetUrl}</a> and enter the token along with your new password.</p><p>If you didn't request this, ignore this email.</p>`
       });
     } catch (err) {
       console.log('Email send error:', err.message);
@@ -311,6 +311,7 @@ exports.changePassword = async (req, res) => {
     if (!isValid) return res.status(401).json({ success: false, message: 'Current password is incorrect' });
 
     user.password = newPassword;
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
 
     res.json({ success: true, message: 'Password changed successfully' });

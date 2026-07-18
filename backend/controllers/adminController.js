@@ -271,7 +271,7 @@ exports.updateSettings = async (req, res) => {
     const settings = await Settings.getSettings();
     const allowedFields = [
       'commissionPercent', 'minDeposit', 'minWithdrawal', 'minBet', 'maxBet',
-      'forceCoinResult', 'forceNextNGames', 'referralCommissionPercent', 'referralBonusEnabled',
+      'referralCommissionPercent', 'referralBonusEnabled',
       'maintenanceMode', 'maintenanceMessage', 'defaultCurrency', 'supportedCurrencies',
       'exchangeRates', 'freeManualDraw', 'announcement', 'announcementEnabled',
       'autoResolve', 'autoCommission'
@@ -281,10 +281,13 @@ exports.updateSettings = async (req, res) => {
       if (req.body[field] !== undefined) settings[field] = req.body[field];
     });
 
-    // Reset forced games counter if new force is set
-    if (req.body.forceCoinResult !== undefined || req.body.forceNextNGames !== undefined) {
-      settings.forcedGamesPlayed = 0;
-    }
+    if (settings.commissionPercent > 100) settings.commissionPercent = 100;
+    if (settings.commissionPercent < 0) settings.commissionPercent = 0;
+    if (settings.sessionDuration < 5) settings.sessionDuration = 5;
+    if (settings.minBet < 0) settings.minBet = 0;
+    if (settings.maxBet < settings.minBet) settings.maxBet = settings.minBet + 1;
+    if (settings.referralCommissionPercent > 100) settings.referralCommissionPercent = 100;
+    if (settings.referralCommissionPercent < 0) settings.referralCommissionPercent = 0;
 
     settings.updatedAt = new Date();
     await settings.save();
@@ -423,8 +426,9 @@ exports.resolveFlips = async (req, res) => {
         settings.platformTotalEarnings += game.betAmount;
         game.balanceAfter = (user.balance?.[cur] || 0);
       }
+      const realInc = outcome === 'win' ? { realWins: 1 } : { realLosses: 1 };
       await User.findByIdAndUpdate(game.userId, {
-        $inc: { totalWins: outcome === 'win' ? 1 : 0, totalLosses: outcome === 'win' ? 0 : 1, totalGames: 1, totalWagered: game.betAmount }
+        $inc: { totalWins: outcome === 'win' ? 1 : 0, totalLosses: outcome === 'win' ? 0 : 1, totalGames: 1, totalWagered: game.betAmount, realGames: 1, realWagered: game.betAmount, ...realInc }
       });
       await settings.save();
 
@@ -509,9 +513,10 @@ exports.resolveFreeFlips = async (req, res) => {
       const user = await User.findById(game.userId);
       if (!user) continue;
 
-      if (outcome === 'win') user.totalWins += 1;
-      else user.totalLosses += 1;
+      if (outcome === 'win') { user.totalWins += 1; user.freeWins += 1; }
+      else { user.totalLosses += 1; user.freeLosses += 1; }
       user.totalGames += 1;
+      user.freeGames += 1;
       await user.save();
 
       game.result = result;
@@ -645,8 +650,9 @@ exports.getPlatformWallet = async (req, res) => {
 // @route POST /api/admin/platform-withdraw
 exports.platformWithdraw = async (req, res) => {
   try {
-    const { amount, method, details } = req.body;
-    if (!amount || amount <= 0) {
+    let { amount, method, details } = req.body;
+    amount = Number(amount);
+    if (isNaN(amount) || amount <= 0) {
       return res.status(400).json({ success: false, message: 'Invalid amount' });
     }
 

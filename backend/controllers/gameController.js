@@ -4,13 +4,13 @@ const Transaction = require('../models/Transaction');
 const Settings = require('../models/Settings');
 const GameSession = require('../models/GameSession');
 
-// Per-user free mode rate limiter (1 request per second)
-const freeRateMap = new Map();
-function checkFreeRate(userId) {
+// Per-user rate limiter (1 request per second for free, 1 per 500ms for real)
+const rateMap = new Map();
+function checkRate(userId, minInterval) {
   const now = Date.now();
-  const last = freeRateMap.get(String(userId)) || 0;
-  if (now - last < 1000) return false;
-  freeRateMap.set(String(userId), now);
+  const last = rateMap.get(String(userId)) || 0;
+  if (now - last < minInterval) return false;
+  rateMap.set(String(userId), now);
   return true;
 }
 
@@ -33,7 +33,7 @@ exports.flip = async (req, res) => {
 
     // --- FREE MODE ---
     if (mode === 'free') {
-      if (req.user && !checkFreeRate(req.user._id)) {
+      if (req.user && !checkRate(req.user._id, 1000)) {
         return res.status(429).json({ success: false, message: 'Too fast! Wait a moment between free bets.' });
       }
 
@@ -67,7 +67,13 @@ exports.flip = async (req, res) => {
     }
 
     // --- REAL MONEY MODE (Session-based) ---
-    if (!betAmount || betAmount < settings.minBet) {
+    if (!checkRate(req.user._id, 500)) {
+      return res.status(429).json({ success: false, message: 'Too fast! Wait a moment before placing another bet.' });
+    }
+    if (betAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid bet amount' });
+    }
+    if (betAmount < settings.minBet) {
       return res.status(400).json({ success: false, message: `Minimum bet is ${settings.minBet}` });
     }
     if (betAmount > settings.maxBet) {
@@ -75,6 +81,9 @@ exports.flip = async (req, res) => {
     }
 
     const cur = currency || req.user.preferredCurrency || 'INR';
+    if (!settings.supportedCurrencies.includes(cur)) {
+      return res.status(400).json({ success: false, message: `Unsupported currency: ${cur}` });
+    }
     const user = await User.findById(req.user._id);
     const userBalance = user.balance[cur] || 0;
 

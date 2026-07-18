@@ -7,15 +7,6 @@ const settingsSchema = new mongoose.Schema({
   minBet: { type: Number, default: 50 },
   maxBet: { type: Number, default: 50000 },
 
-  // Coin control - Admin can force outcome
-  forceCoinResult: {
-    type: String,
-    enum: ['heads', 'tails', null],
-    default: null
-  },
-  forceNextNGames: { type: Number, default: 0 }, // 0 = disabled
-  forcedGamesPlayed: { type: Number, default: 0 }, // tracking counter
-
   // Referral
   referralCommissionPercent: { type: Number, default: 2 },
   referralBonusEnabled: { type: Boolean, default: true },

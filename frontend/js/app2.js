@@ -4,12 +4,23 @@ let currentUser = null;
 let currentCurrency = 'INR';
 let authToken = localStorage.getItem('cf_token');
 
-const CURRENCY_SYMBOLS = { INR: '₹', USD: '$', EUR: '€', GBP: '£' };
-const CURRENCY_RATES = { INR: 1, USD: 0.012, EUR: 0.011, GBP: 0.0095 };
+let CURRENCY_SYMBOLS = { INR: '₹', USD: '$', EUR: '€', GBP: '£' };
+let CURRENCY_RATES = { INR: 1, USD: 0.012, EUR: 0.011, GBP: 0.0095 };
+
+async function loadSettings() {
+  try {
+    const res = await fetch('/api/settings-public');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.exchangeRates) CURRENCY_RATES = data.exchangeRates;
+    }
+  } catch (e) { /* use defaults */ }
+}
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async () => {
   applyTheme();
+  await loadSettings();
   if (authToken) await loadUser();
   checkAnnouncement();
 });

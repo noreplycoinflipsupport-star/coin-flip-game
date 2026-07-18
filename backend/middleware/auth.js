@@ -21,6 +21,10 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'User not found' });
     }
 
+    if (decoded.tokenVersion !== undefined && decoded.tokenVersion !== user.tokenVersion) {
+      return res.status(401).json({ success: false, message: 'Session expired, please login again' });
+    }
+
     if (user.status === 'banned') {
       return res.status(403).json({ success: false, message: 'Your account has been banned. Contact support.' });
     }
