@@ -115,7 +115,7 @@
       <!-- Streak + Probability Row -->
       <div class="meta-row">
         <div class="streak-display" id="streak-display" style="visibility:hidden">
-          <span class="streak-label">Streak</span>
+          <span class="streak-label" id="streak-label">Free Streak</span>
           <span class="streak-value" id="streak-count">0</span>
           <span class="streak-emoji" id="streak-emoji">🔥</span>
         </div>
@@ -247,19 +247,19 @@
     <div class="stats-row" id="stats-row" style="display:none">
       <div class="stat-item">
         <div class="stat-value" id="stat-total">0</div>
-        <div class="stat-label">Total Flips</div>
+        <div class="stat-label" id="stat-label-total">Free Flips</div>
       </div>
       <div class="stat-item">
         <div class="stat-value text-green" id="stat-wins">0</div>
-        <div class="stat-label">Wins</div>
+        <div class="stat-label" id="stat-label-wins">Free Wins</div>
       </div>
       <div class="stat-item">
         <div class="stat-value text-red" id="stat-losses">0</div>
-        <div class="stat-label">Losses</div>
+        <div class="stat-label" id="stat-label-losses">Free Losses</div>
       </div>
       <div class="stat-item">
         <div class="stat-value text-blue" id="stat-winrate">0%</div>
-        <div class="stat-label">Win Rate</div>
+        <div class="stat-label" id="stat-label-wr">Win Rate</div>
       </div>
     </div>
 

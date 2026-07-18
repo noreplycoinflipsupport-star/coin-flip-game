@@ -8,11 +8,11 @@ let isFlipping = false;
 let pendingGameId = null;
 let pendingPollTimer = null;
 
-// Session stats (in-memory, not persisted)
-let sessionWins = 0;
-let sessionLosses = 0;
-let sessionStreak = 0;
-let sessionStreakType = null; // 'win' | 'loss'
+// Session stats per mode (in-memory, not persisted)
+let sessionStats = {
+  free: { wins: 0, losses: 0, streak: 0, streakType: null },
+  real: { wins: 0, losses: 0, streak: 0, streakType: null }
+};
 
 // Flip history (max 10)
 const MAX_HISTORY_BUBBLES = 10;
@@ -64,6 +64,7 @@ function setMode(mode) {
   }
   clearResult();
   loadGameStats();
+  updateSessionDisplay();
 }
 
 /* ============================================================
@@ -296,15 +297,16 @@ function _onFlipComplete(result, outcome, winAmount, betAmount, mode) {
   isFlipping = false;
   _resetFlipBtn();
 
-  // Update session stats
+  // Update session stats per mode
+  const s = sessionStats[gameMode];
   if (outcome === 'win') {
-    sessionWins++;
-    sessionStreak = sessionStreakType === 'win' ? sessionStreak + 1 : 1;
-    sessionStreakType = 'win';
+    s.wins++;
+    s.streak = s.streakType === 'win' ? s.streak + 1 : 1;
+    s.streakType = 'win';
   } else {
-    sessionLosses++;
-    sessionStreak = sessionStreakType === 'loss' ? sessionStreak + 1 : 1;
-    sessionStreakType = 'loss';
+    s.losses++;
+    s.streak = s.streakType === 'loss' ? s.streak + 1 : 1;
+    s.streakType = 'loss';
   }
 
   // Show results
@@ -439,6 +441,13 @@ async function loadGameStats() {
       _setStatEl('stat-wins', data.stats.totalWins);
       _setStatEl('stat-losses', data.stats.totalLosses);
       _setStatEl('stat-winrate', `${data.stats.winRate}%`);
+      const prefix = mode === 'free' ? 'Free' : 'Real';
+      const tl = document.getElementById('stat-label-total');
+      const wl = document.getElementById('stat-label-wins');
+      const ll = document.getElementById('stat-label-losses');
+      if (tl) tl.textContent = `${prefix} Flips`;
+      if (wl) wl.textContent = `${prefix} Wins`;
+      if (ll) ll.textContent = `${prefix} Losses`;
       document.getElementById('stats-row')?.style.removeProperty('display');
     }
   } catch (e) { console.error('loadGameStats:', e); }
@@ -484,17 +493,22 @@ function updateSessionDisplay() {
   const winsEl = document.getElementById('session-wins');
   const lossesEl = document.getElementById('session-losses');
 
+  const s = sessionStats[gameMode];
+
+  const modeLabel = document.getElementById('streak-label');
+  if (modeLabel) modeLabel.textContent = gameMode === 'free' ? 'Free Streak' : 'Real Streak';
+
   // Streak
   if (streakEl) {
     streakEl.style.visibility = 'visible';
-    if (streakCount) streakCount.textContent = sessionStreak;
+    if (streakCount) streakCount.textContent = s.streak;
     if (streakEmoji) {
-      if (sessionStreakType === 'win') {
-        streakEmoji.textContent = sessionStreak >= 3 ? '🔥' : '⭐';
+      if (s.streakType === 'win') {
+        streakEmoji.textContent = s.streak >= 3 ? '🔥' : '⭐';
         streakEl.style.background = 'rgba(52,168,83,0.1)';
         if (streakCount) streakCount.style.color = 'var(--google-green)';
       } else {
-        streakEmoji.textContent = sessionStreak >= 3 ? '❄️' : '💧';
+        streakEmoji.textContent = s.streak >= 3 ? '❄️' : '💧';
         streakEl.style.background = 'rgba(234,67,53,0.1)';
         if (streakCount) streakCount.style.color = 'var(--google-red)';
       }
@@ -503,8 +517,8 @@ function updateSessionDisplay() {
 
   // Session wins/losses
   if (sessionInfo) sessionInfo.style.visibility = 'visible';
-  if (winsEl) winsEl.textContent = `${sessionWins}W`;
-  if (lossesEl) lossesEl.textContent = `${sessionLosses}L`;
+  if (winsEl) winsEl.textContent = `${s.wins}W`;
+  if (lossesEl) lossesEl.textContent = `${s.losses}L`;
 }
 
 /* ============================================================
