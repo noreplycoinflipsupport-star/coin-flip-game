@@ -9,6 +9,20 @@ const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const logger = require('./utils/logger');
 
+// Startup environment validation
+const REQUIRED_ENV_VARS = ['MONGODB_URI', 'JWT_SECRET'];
+let missingVars = REQUIRED_ENV_VARS.filter(v => !process.env[v]);
+if (missingVars.length > 0) {
+  logger.warn(`Missing required environment variables: ${missingVars.join(', ')}`);
+  if (missingVars.includes('JWT_SECRET') && !process.env.JWT_SECRET) {
+    process.env.JWT_SECRET = require('crypto').randomBytes(32).toString('hex');
+    logger.warn('JWT_SECRET not set — generated a random fallback. Existing sessions will be invalidated on restart.');
+  }
+  if (missingVars.includes('MONGODB_URI')) {
+    logger.error('MONGODB_URI not set — database features will be unavailable.');
+  }
+}
+
 const app = express();
 
 app.set('trust proxy', 1);
