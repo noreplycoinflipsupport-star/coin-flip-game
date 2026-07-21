@@ -75,6 +75,11 @@ exports.flip = async (req, res) => {
     }
 
     // --- REAL MONEY MODE (Session-based) ---
+    // Auth guard — must be logged in for real money
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ success: false, message: 'Please login to play real money mode.' });
+    }
+
     if (!checkRate(req.user._id, 500)) {
       return res.status(429).json({ success: false, message: 'Too fast! Wait a moment before placing another bet.' });
     }
@@ -82,37 +87,49 @@ exports.flip = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid bet amount' });
     }
     if (betAmount < settings.minBet) {
-      return res.status(400).json({ success: false, message: `Minimum bet is ${settings.minBet}` });
+      return res.status(400).json({ success: false, message: `Minimum bet is ₹${settings.minBet}` });
     }
     if (betAmount > settings.maxBet) {
-      return res.status(400).json({ success: false, message: `Maximum bet is ${settings.maxBet}` });
+      return res.status(400).json({ success: false, message: `Maximum bet is ₹${settings.maxBet}` });
     }
 
     const cur = currency || req.user.preferredCurrency || 'INR';
-    if (!settings.supportedCurrencies.includes(cur)) {
+    const supportedCurrencies = (settings.supportedCurrencies && settings.supportedCurrencies.length)
+      ? settings.supportedCurrencies
+      : ['INR', 'USD', 'EUR', 'GBP'];
+    if (!supportedCurrencies.includes(cur)) {
       return res.status(400).json({ success: false, message: `Unsupported currency: ${cur}` });
     }
+
     const user = await User.findById(req.user._id);
-    const userBalance = user.balance[cur] || 0;
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found. Please login again.' });
+    }
+    const userBalance = (user.balance && user.balance[cur] != null) ? user.balance[cur] : 0;
 
     if (userBalance < betAmount) {
-      return res.status(400).json({ success: false, message: 'Insufficient balance' });
+      return res.status(400).json({ success: false, message: `Insufficient balance. Your balance: ₹${userBalance.toFixed(2)}` });
     }
 
     // Get or ensure current session (with boundary protection)
     const sessionManager = require('../services/sessionManager');
     let session;
-    for (let attempt = 0; attempt < 5; attempt++) {
-      if (sessionManager.getIsResolving()) {
-        await new Promise(r => setTimeout(r, 500));
-        continue;
+    try {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        if (sessionManager.getIsResolving()) {
+          await new Promise(r => setTimeout(r, 500));
+          continue;
+        }
+        session = await sessionManager.ensureActiveSession();
+        if (session && session.status === 'betting') break;
+        await new Promise(r => setTimeout(r, 300));
       }
-      session = await sessionManager.ensureActiveSession();
-      if (session && session.status === 'betting') break;
-      await new Promise(r => setTimeout(r, 300));
+    } catch (sessionErr) {
+      logger.error('Session fetch error in flip', { error: sessionErr.message, stack: sessionErr.stack });
+      return res.status(503).json({ success: false, message: 'Game session unavailable. Please try again in a moment.' });
     }
     if (!session || session.status !== 'betting') {
-      return res.status(503).json({ success: false, message: 'Session unavailable, try again' });
+      return res.status(503).json({ success: false, message: 'No active game session. Please try again shortly.' });
     }
 
     // Create game record first
@@ -146,8 +163,8 @@ exports.flip = async (req, res) => {
       balance: updated.balance[cur], currency: cur
     });
   } catch (error) {
-    logger.error('Flip error', { error: error.message });
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    logger.error('Flip error', { error: error.message, stack: error.stack });
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const gameSessionSchema = new mongoose.Schema({
-  sessionId: { type: Number },
+  sessionId: { type: String },
   startTime: { type: Date },
   endTime: { type: Date },
   status: {

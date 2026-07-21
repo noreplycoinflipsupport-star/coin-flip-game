@@ -10,11 +10,16 @@ let isResolving = false;
 let timerRef = null;
 
 async function ensureActiveSession() {
-  let session = await GameSession.getCurrent();
-  if (!session) {
-    session = await createNewSession();
+  try {
+    let session = await GameSession.getCurrent();
+    if (!session) {
+      session = await createNewSession();
+    }
+    return session;
+  } catch (err) {
+    logger.error('ensureActiveSession error', { error: err.message, stack: err.stack });
+    throw err;
   }
-  return session;
 }
 
 async function createNewSession() {
@@ -76,13 +81,13 @@ async function resolveCurrentSession() {
         commission = (game.betAmount * settings.commissionPercent) / 100;
         netPayout = game.betAmount - commission;
         const updatedUser = await User.atomicAddBalance(game.userId, cur, netPayout + game.betAmount);
-        settings.platformBalance += commission;
-        settings.platformTotalEarnings += commission;
-        game.balanceAfter = updatedUser ? (updatedUser.balance[cur] || 0) : 0;
+        settings.platformBalance = (settings.platformBalance || 0) + commission;
+        settings.platformTotalEarnings = (settings.platformTotalEarnings || 0) + commission;
+        game.balanceAfter = updatedUser ? ((updatedUser.balance && updatedUser.balance[cur]) || 0) : 0;
       } else {
-        settings.platformBalance += game.betAmount;
-        settings.platformTotalEarnings += game.betAmount;
-        game.balanceAfter = user.balance ? (user.balance[cur] || 0) : 0;
+        settings.platformBalance = (settings.platformBalance || 0) + game.betAmount;
+        settings.platformTotalEarnings = (settings.platformTotalEarnings || 0) + game.betAmount;
+        game.balanceAfter = (user.balance && user.balance[cur] != null) ? user.balance[cur] : 0;
       }
       await User.findByIdAndUpdate(game.userId, {
         $inc: { totalWins: outcome === 'win' ? 1 : 0, totalLosses: outcome === 'win' ? 0 : 1, totalGames: 1, totalWagered: game.betAmount, realWins: outcome === 'win' ? 1 : 0, realLosses: outcome === 'win' ? 0 : 1, realGames: 1, realWagered: game.betAmount }
