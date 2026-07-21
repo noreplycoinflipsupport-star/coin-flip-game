@@ -37,7 +37,9 @@ function validatePhone(phone) {
 
 // Generate JWT
 const generateToken = (id, tokenVersion = 0) => {
-  return jwt.sign({ id, tokenVersion }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+  const secret = process.env.JWT_SECRET;
+  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  return jwt.sign({ id, tokenVersion }, secret, { expiresIn });
 };
 
 // Generate OTP
